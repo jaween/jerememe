@@ -5,7 +5,6 @@ ENV BASE_URL $BASE_URL
 
 # Source code
 WORKDIR /srv/
-RUN mkdir uploads
 COPY package.json .
 COPY package-lock.json .
 RUN npm install

@@ -5,9 +5,10 @@ ENV BASE_URL $BASE_URL
 
 # Install dependencies in the development image
 WORKDIR /srv/server
-RUN mkdir uploads
 COPY package*.json ./
 RUN npm install
+
+COPY data.db ./data.db
 
 COPY tsconfig.json ./
 

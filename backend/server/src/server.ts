@@ -2,6 +2,7 @@ import express from "express";
 import logger from "./log.js";
 import { router } from "./router.js";
 import cors from "cors";
+import { Datastore } from "./datastore.js";
 
 async function init() {
   const expressApp = express();
@@ -17,7 +18,9 @@ async function init() {
     next();
   });
 
-  const apiRouter = router();
+  const datastore = new Datastore("./data.db");
+
+  const apiRouter = router(datastore);
 
   expressApp.use("/v1", apiRouter);
 

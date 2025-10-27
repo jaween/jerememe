@@ -1,10 +1,12 @@
 import { Request, Response, Router } from "express";
+import { Datastore } from "./datastore";
 
-export function router(): Router {
+export function router(datastore: Datastore): Router {
   const router = Router();
 
   router.get("/", async (req: Request, res: Response) => {
-    return res.json({ result: "success" });
+    const results = await datastore.search("kyle");
+    return res.json({ result: "success", results: results });
   });
 
   return router;
