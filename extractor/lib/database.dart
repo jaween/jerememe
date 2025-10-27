@@ -11,26 +11,26 @@ class Database {
 
     db.execute('''
       CREATE TABLE IF NOT EXISTS subtitles (
-        source_id TEXT NOT NULL,
+        media_id TEXT NOT NULL,
         line_number INTEGER NOT NULL,
         start_time INTEGER NOT NULL,
         end_time INTEGER NOT NULL,
         start_frame INTEGER NOT NULL,
         end_frame INTEGER NOT NULL,
         text TEXT NOT NULL,
-        PRIMARY KEY (source_id, line_number)
+        PRIMARY KEY (media_id, line_number)
       );
     ''');
 
     db.execute('''
       CREATE VIRTUAL TABLE IF NOT EXISTS subtitles_fts
-      USING fts5(source_id, line_number, text, content='subtitles', content_rowid='rowid');
+      USING fts5(media_id, line_number, text, content='subtitles', content_rowid='rowid');
     ''');
 
     db.execute('''
       CREATE TRIGGER IF NOT EXISTS subtitles_ai AFTER INSERT ON subtitles BEGIN
-        INSERT INTO subtitles_fts(rowid, source_id, line_number, text)
-        VALUES (new.rowid, new.source_id, new.line_number, new.text);
+        INSERT INTO subtitles_fts(rowid, media_id, line_number, text)
+        VALUES (new.rowid, new.media_id, new.line_number, new.text);
       END;
     ''');
 
@@ -42,7 +42,7 @@ class Database {
 
     db.execute('''
       CREATE TRIGGER IF NOT EXISTS subtitles_au AFTER UPDATE ON subtitles BEGIN
-        UPDATE subtitles_fts SET source_id = new.source_id, line_number = new.line_number, text = new.text
+        UPDATE subtitles_fts SET media_id = new.media_id, line_number = new.line_number, text = new.text
         WHERE rowid = old.rowid;
       END;
     ''');
@@ -55,14 +55,14 @@ class Database {
   }
 
   Future<void> addLines({
-    required String sourceId,
+    required String mediaId,
     required List<SubtitleLine> lines,
   }) async {
     final stmt = _db.prepare('''
       INSERT INTO subtitles (
-        source_id, line_number, start_time, end_time, start_frame, end_frame, text
+        media_id, line_number, start_time, end_time, start_frame, end_frame, text
       ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(source_id, line_number) DO UPDATE SET
+      ON CONFLICT(media_id, line_number) DO UPDATE SET
         start_time = excluded.start_time,
         end_time = excluded.end_time,
         start_frame = excluded.start_frame,
@@ -74,7 +74,7 @@ class Database {
     try {
       for (final line in lines) {
         stmt.execute([
-          sourceId,
+          mediaId,
           line.index,
           line.start.time.inMilliseconds,
           line.end.time.inMilliseconds,
@@ -95,11 +95,11 @@ class Database {
   List<Map<String, Object?>> search(String query) {
     final result = _db.select(
       '''
-      SELECT s.source_id, s.line_number, s.text, s.start_time, s.end_time
+      SELECT s.media_id, s.line_number, s.text, s.start_time, s.end_time
       FROM subtitles_fts f
       JOIN subtitles s ON s.rowid = f.rowid
       WHERE subtitles_fts MATCH ?
-      ORDER BY s.source_id, s.line_number;
+      ORDER BY s.media_id, s.line_number;
     ''',
       [query],
     );

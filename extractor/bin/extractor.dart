@@ -1,20 +1,40 @@
+import 'dart:io';
+
+import 'package:collection/collection.dart';
 import 'package:extractor/database.dart';
 import 'package:extractor/extractor.dart';
+import 'package:extractor/metadata.dart';
+import 'package:path/path.dart' as path;
 
 void main(List<String> arguments) async {
-  const videoPath = 'web_series/s01e01.mkv';
-  final lines = await extractLines(videoPath);
-  if (lines == null) {
-    print('Failed to extract');
-    return;
+  final directoryPath = arguments.firstOrNull;
+  if (directoryPath == null) {
+    print('Usage: ./extractor <MEDIA DIRECTORY NAME>');
+    exit(1);
   }
+  print('Using media path $directoryPath');
+  final files = Directory(directoryPath).listSync().whereType<File>();
 
   final database = await Database.connect('./data.db');
-  print('Connected to DB');
-  await database.addLines(sourceId: 'WEBS01E01', lines: lines);
-  print('Inserted');
-  final results = database.search('kyle');
-  for (final result in results) {
-    print(result);
+
+  for (final metadata in mediaMetadata) {
+    final file = files.firstWhereOrNull(
+      (e) => path.basenameWithoutExtension(e.path) == metadata.id,
+    );
+    if (file == null) {
+      print('${metadata.id}: Not found');
+      continue;
+    }
+    if (file.existsSync()) {
+      print('${metadata.id}: Found');
+      final lines = await extractLines(file.path);
+      if (lines == null) {
+        print('Failed to extract');
+        return;
+      }
+
+      print('  Inserting ${lines.length} subtitle lines into database');
+      await database.addLines(mediaId: metadata.id, lines: lines);
+    }
   }
 }
