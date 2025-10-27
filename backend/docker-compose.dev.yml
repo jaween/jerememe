@@ -1,0 +1,13 @@
+services:
+  jerememe_server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.dev
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: ${NODE_ENV}
+    ports:
+      - 8080:8080
+    volumes:
+      - ./server/src:/srv/server/src

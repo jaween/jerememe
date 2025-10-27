@@ -1,0 +1,9 @@
+services:
+  jerememe_server:
+    build: ./server
+    environment:
+      NODE_ENV: ${NODE_ENV}
+    image: jerememe_server
+    container_name: jerememe_server
+    ports:
+      - 8080:8080

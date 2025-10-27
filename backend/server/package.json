@@ -1,0 +1,33 @@
+{
+  "name": "jerememe_server",
+  "version": "1.0.0",
+  "description": "Backend for the Jerememe meme generator project",
+  "main": "./built/src/server.js",
+  "scripts": {
+    "start": "node -r source-map-support/register ./built/server.js",
+    "build": "tsc",
+    "dev": "tsc-watch --onSuccess \"node -r source-map-support/register ./built/server.js\""
+  },
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@google-cloud/logging-winston": "^6.0.0",
+    "axios": "^1.11.0",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "winston": "^3.14.2",
+    "zod": "^4.0.14"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.5.1",
+    "@typescript-eslint/eslint-plugin": "^8.3.0",
+    "@typescript-eslint/parser": "^8.3.0",
+    "eslint": "^9.9.1",
+    "source-map-support": "^0.5.21",
+    "tsc-watch": "^6.2.0",
+    "typescript": "^5.5.4"
+  }
+}
