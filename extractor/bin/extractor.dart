@@ -27,7 +27,7 @@ void main(List<String> arguments) async {
     }
     if (file.existsSync()) {
       print('${metadata.id}: Found');
-      final lines = await extractLines(file.path);
+      final lines = await extractSubtitleLines(file.path);
       if (lines == null) {
         print('Failed to extract');
         return;
@@ -35,6 +35,26 @@ void main(List<String> arguments) async {
 
       print('  Inserting ${lines.length} subtitle lines into database');
       await database.addLines(mediaId: metadata.id, lines: lines);
+
+      const extractDuration = Duration(minutes: 1);
+      final videoDuration = await getVideoDuration(file.path);
+      for (
+        Duration skip = Duration.zero;
+        skip < videoDuration;
+        skip += extractDuration
+      ) {
+        final frames = await extractFrames(
+          mediaId: metadata.id,
+          videoPath: file.path,
+          skip: skip,
+          duration: extractDuration,
+        );
+        if (frames == null) {
+          continue;
+        }
+        print('Frames ${frames.length}');
+        // TODO: Upload frames to S3
+      }
     }
   }
 }
