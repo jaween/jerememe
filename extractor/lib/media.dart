@@ -1,3 +1,19 @@
+class Media {
+  final MediaMetadata metadata;
+  final Duration duration;
+  final int durationFrames;
+
+  Media({
+    required this.metadata,
+    required this.duration,
+    required this.durationFrames,
+  });
+
+  String get id => metadata.id;
+
+  String get title => metadata.title;
+}
+
 class MediaMetadata {
   final String id;
   final String title;

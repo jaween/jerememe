@@ -12,7 +12,7 @@ Future<List<SubtitleLine>?> extractSubtitleLines(String videoPath) async {
   return _parseSrt(text);
 }
 
-Future<List<Uint8List>?> extractFrames({
+Future<List<Uint8List>> extractFrames({
   required String mediaId,
   required String videoPath,
   required Duration skip,
@@ -29,9 +29,10 @@ Future<List<Uint8List>?> extractFrames({
     _formatFfmpegTime(skip),
     '-i',
     videoPath,
-
     '-t',
     _formatFfmpegTime(duration),
+    '-r',
+    '24',
     '-f',
     'image2pipe',
     '-',
@@ -41,12 +42,8 @@ Future<List<Uint8List>?> extractFrames({
   int frame = 0;
   await for (var chunk in process.stdout) {
     frame++;
-    if (frame % 300 == 0) {
-      print('  Processed ${(frame / 30).toStringAsFixed(2)}s');
-    }
-    if (frame == 404) {
-      final tempFile = File('./temp.avif');
-      await tempFile.writeAsBytes(chunk);
+    if (frame % 240 == 0) {
+      print('  Processed ${(frame / 24).toStringAsFixed(2)}s');
     }
     output.add(Uint8List.fromList(chunk));
   }

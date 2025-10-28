@@ -6,7 +6,10 @@ environment:
   sdk: ^3.9.2
 
 dependencies:
+  aws_s3_api: ^2.0.0
   collection: ^1.19.1
+  crypto: ^3.0.6
+  dotenv: ^4.2.0
   path: ^1.9.1
   sqlite3: ^2.9.3
 

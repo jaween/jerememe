@@ -1,3 +1,4 @@
+import 'package:extractor/media.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite3;
 import 'package:extractor/subtitles.dart';
 
@@ -10,6 +11,15 @@ class Database {
     final db = sqlite3.sqlite3.open(path);
 
     db.execute('''
+      CREATE TABLE IF NOT EXISTS media (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        duration_seconds INTEGER NOT NULL,
+        duration_frames INTEGER NOT NULL
+      );
+    ''');
+
+    db.execute('''
       CREATE TABLE IF NOT EXISTS subtitles (
         media_id TEXT NOT NULL,
         line_number INTEGER NOT NULL,
@@ -18,7 +28,8 @@ class Database {
         start_frame INTEGER NOT NULL,
         end_frame INTEGER NOT NULL,
         text TEXT NOT NULL,
-        PRIMARY KEY (media_id, line_number)
+        PRIMARY KEY (media_id, line_number),
+        FOREIGN KEY(media_id) REFERENCES media(id) ON DELETE CASCADE
       );
     ''');
 
@@ -52,6 +63,20 @@ class Database {
 
   void close() {
     _db.dispose();
+  }
+
+  Future<void> addMedia(Media media) async {
+    _db.execute(
+      '''
+      INSERT INTO media (id, title, duration_seconds, duration_frames)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        title = excluded.title,
+        duration_seconds = excluded.duration_seconds,
+        duration_frames = excluded.duration_frames;
+      ''',
+      [media.id, media.title, media.duration.inSeconds, media.durationFrames],
+    );
   }
 
   Future<void> addLines({
