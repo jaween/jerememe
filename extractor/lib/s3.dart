@@ -16,13 +16,19 @@ class S3Storage {
       accessKey: accessKey,
       secretKey: secretKey,
     );
-    print(
-      'access key length ${accessKey.length}, secret key length ${secretKey.length}',
-    );
     _s3 = aws.S3(region: region, credentials: credentials);
   }
 
-  Future<void> upload({required String key, required Uint8List data}) async {
-    await _s3.putObject(bucket: _bucket, key: key, body: data);
+  Future<void> upload({
+    required String key,
+    required Uint8List data,
+    String? contentType,
+  }) async {
+    await _s3.putObject(
+      bucket: _bucket,
+      key: key,
+      body: data,
+      contentType: contentType,
+    );
   }
 }
