@@ -42,12 +42,10 @@ Future<List<Uint8List>> extractFrames({
   int frame = 0;
   await for (var chunk in process.stdout) {
     frame++;
-    if (frame % 240 == 0) {
-      print('  Processed ${(frame / 24).toStringAsFixed(2)}s');
-    }
     output.add(Uint8List.fromList(chunk));
   }
   await process.exitCode;
+  print('  Extracted $frame frames');
   return output;
 }
 

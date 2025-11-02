@@ -81,11 +81,11 @@ Future<void> _extract({
     );
 
     const uploadBatchSize = 24;
-    for (int i = 0; i < frames.length; i += uploadBatchSize) {
-      final batch = frames.skip(i).take(uploadBatchSize).toList();
-      final batchStartFrameIndex = frameCount + i;
+    for (int f = 0; f < frames.length; f += uploadBatchSize) {
+      final batch = frames.skip(f).take(uploadBatchSize).toList();
+      final batchStartFrameIndex = frameCount + f;
       print(
-        '  Uploading frames $batchStartFrameIndex to ${batchStartFrameIndex + batch.length - 1} / ${frameCount - 1}',
+        '  Uploading batch of $uploadBatchSize frames (${f + 1} / ${frames.length - 1})',
       );
       await Future.wait([
         for (final (batchOffset, frame) in batch.indexed)
@@ -95,12 +95,14 @@ Future<void> _extract({
               frameIndex: batchStartFrameIndex + batchOffset,
             ),
             data: frame,
+            contentType: 'image/jpeg',
           ),
       ]);
     }
 
     frameCount += frames.length;
   }
+  print('  Running total uploaded: $frameCount frames');
 
   print('  Inserting media info into database');
   await database.addMedia(
@@ -116,5 +118,5 @@ String _generateS3FrameKey({required String mediaId, required int frameIndex}) {
   final base = '$mediaId/frames/$frameIndex';
   final bytes = utf8.encode(base);
   final digest = crypto.sha256.convert(bytes);
-  return 'public/$mediaId/frames/${digest.toString().substring(0, 8)}/$frameIndex';
+  return 'public/$mediaId/frames/${digest.toString().substring(0, 8)}/$frameIndex.jpg';
 }
