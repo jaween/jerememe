@@ -3,6 +3,7 @@ import logger from "./log.js";
 import { router } from "./router.js";
 import cors from "cors";
 import { Datastore } from "./datastore.js";
+import { S3Storage } from "./storage.js";
 
 async function init() {
   const expressApp = express();
@@ -18,7 +19,12 @@ async function init() {
     next();
   });
 
-  const datastore = new Datastore("./data.db");
+  const cdnPrefix = process.env.CDN_PREFIX;
+  if (!cdnPrefix) {
+    throw "Missing CDN prefix";
+  }
+  const storage = new S3Storage(cdnPrefix);
+  const datastore = new Datastore("./data.db", storage);
 
   const apiRouter = router(datastore);
 

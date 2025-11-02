@@ -7,6 +7,7 @@ services:
       - .env
     environment:
       NODE_ENV: ${NODE_ENV}
+      CDN_PREFIX: ${CDN_PREFIX}
     ports:
       - 8080:8080
     volumes:
