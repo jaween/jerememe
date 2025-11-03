@@ -1,10 +1,31 @@
+import {
+  S3Client,
+  PutObjectCommand,
+  HeadObjectCommand,
+} from "@aws-sdk/client-s3";
 import { createHash } from "crypto";
 
 export class S3Storage {
   private cdnPrefix: string;
+  private bucketName: string;
+  private s3Client: S3Client;
 
-  constructor(cdnPrefix: string) {
-    this.cdnPrefix = cdnPrefix;
+  constructor(options: {
+    accessKeyId: string;
+    secretAccessKey: string;
+    region: string;
+    bucketName: string;
+    cdnPrefix: string;
+  }) {
+    this.cdnPrefix = options.cdnPrefix;
+    this.bucketName = options.bucketName;
+    this.s3Client = new S3Client({
+      region: options.region,
+      credentials: {
+        accessKeyId: options.accessKeyId,
+        secretAccessKey: options.secretAccessKey,
+      },
+    });
   }
 
   public generateS3FrameKey(mediaId: string, frameIndex: number): string {
@@ -16,7 +37,41 @@ export class S3Storage {
     )}/${frameIndex}.jpg`;
   }
 
-  public urlFromKey(key: string): string {
+  public generateMemeKey(id: string): string {
+    return `user/${id}`;
+  }
+
+  public urlForKey(key: string): string {
     return `${this.cdnPrefix}/${key}`;
+  }
+
+  public async upload(
+    key: string,
+    data: Buffer,
+    contentType?: string
+  ): Promise<string> {
+    try {
+      await this.s3Client.send(
+        new HeadObjectCommand({
+          Bucket: this.bucketName,
+          Key: key,
+        })
+      );
+      return this.urlForKey(key);
+    } catch (error: any) {
+      if (error.name === "NotFound") {
+        await this.s3Client.send(
+          new PutObjectCommand({
+            Bucket: this.bucketName,
+            Key: key,
+            Body: data,
+            ContentType: contentType,
+          })
+        );
+        return this.urlForKey(key);
+      } else {
+        throw error;
+      }
+    }
   }
 }

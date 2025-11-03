@@ -3,6 +3,10 @@ services:
     build: ./server
     environment:
       NODE_ENV: ${NODE_ENV}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      S3_REGION: ${S3_REGION}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME}
       CDN_PREFIX: ${CDN_PREFIX}
     image: jerememe_server
     container_name: jerememe_server

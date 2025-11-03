@@ -12,10 +12,12 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.922.0",
     "@google-cloud/logging-winston": "^6.0.0",
-    "axios": "^1.11.0",
+    "axios": "^1.13.1",
     "cors": "^2.8.5",
     "express": "^4.19.2",
+    "short-uuid": "^5.2.0",
     "sqlite3": "^5.1.7",
     "winston": "^3.14.2",
     "zod": "^4.1.12"

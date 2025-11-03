@@ -54,7 +54,7 @@ export class Datastore {
           startTime: r.start_time,
           startFrame: r.start_frame,
           text: r.text,
-          image: this.storage.urlFromKey(
+          image: this.storage.urlForKey(
             this.storage.generateS3FrameKey(r.media_id, r.start_frame)
           ),
         }));
@@ -91,7 +91,32 @@ export class Datastore {
     const results: Frame[] = [];
     for (let i = start; i <= end; i++) {
       const key = this.storage.generateS3FrameKey(mediaId, i);
-      const url = this.storage.urlFromKey(key);
+      const url = this.storage.urlForKey(key);
+      results.push({ index: i, image: url });
+    }
+
+    return results;
+  }
+
+  public async fetchFrameRange(
+    mediaId: string,
+    startFrame: number,
+    endFrame: number
+  ): Promise<Frame[]> {
+    const maxFrame = await this.durationFramesOfMedia(mediaId);
+    if (startFrame > endFrame || startFrame < 0 || endFrame >= maxFrame) {
+      throw "Invaid frame indexes";
+    }
+
+    const count = endFrame - startFrame;
+    if (count > 720) {
+      throw "Frame range too large";
+    }
+
+    const results: Frame[] = [];
+    for (let i = startFrame; i <= endFrame; i++) {
+      const key = this.storage.generateS3FrameKey(mediaId, i);
+      const url = this.storage.urlForKey(key);
       results.push({ index: i, image: url });
     }
 

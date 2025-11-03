@@ -1,8 +1,15 @@
 import { Request, Response, Router } from "express";
 import { Datastore } from "./datastore";
+import { VideoEncoder } from "./video_encoder";
+import { S3Storage } from "./storage";
+import shortUUID from "short-uuid";
 import z from "zod";
 
-export function router(datastore: Datastore): Router {
+export function router(
+  datastore: Datastore,
+  videoEncoder: VideoEncoder,
+  storage: S3Storage
+): Router {
   const router = Router();
 
   router.get("/search", async (req: Request, res: Response) => {
@@ -21,7 +28,6 @@ export function router(datastore: Datastore): Router {
     try {
       query = framesQuerySchema.parse(req.query);
     } catch (e) {
-      console.log(e);
       return res.sendStatus(400);
     }
     const results = await datastore.fetchFrames(
@@ -34,6 +40,37 @@ export function router(datastore: Datastore): Router {
       data: results,
       meta: { maxIndex: await datastore.durationFramesOfMedia(query.media_id) },
     });
+  });
+
+  router.post("/meme", async (req: Request, res: Response) => {
+    let body: PostMemeBody;
+    try {
+      body = postMemeBodySchema.parse(req.body);
+    } catch (e) {
+      return res.sendStatus(400);
+    }
+    const frames = await datastore.fetchFrameRange(
+      body.mediaId,
+      body.startFrame,
+      body.endFrame
+    );
+
+    let video: Buffer;
+    try {
+      video = await videoEncoder.encode(frames, 24);
+    } catch (e) {
+      return res.sendStatus(500);
+    }
+
+    const videoKey = storage.generateMemeKey(shortUUID.generate());
+    try {
+      await storage.upload(videoKey, video, "video/webm");
+    } catch (e) {
+      return res.sendStatus(500);
+    }
+
+    const url = storage.urlForKey(videoKey);
+    return res.json({ data: { url: url } });
   });
 
   return router;
@@ -53,3 +90,12 @@ const framesQuerySchema = z.object({
 });
 
 type FramesQueryParams = z.infer<typeof framesQuerySchema>;
+
+const postMemeBodySchema = z.object({
+  mediaId: z.string(),
+  startFrame: z.coerce.number().int(),
+  endFrame: z.coerce.number().int(),
+  text: z.string().optional(),
+});
+
+type PostMemeBody = z.infer<typeof postMemeBodySchema>;
