@@ -1,12 +1,81 @@
+import 'package:app/error_page.dart';
+import 'package:app/home_page.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class JerememeApp extends StatelessWidget {
   const JerememeApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(body: Center(child: Text('Jerememe'))),
+    return _RouterBuilder(
+      navigatorObservers: [],
+      builder: (context, router) {
+        final colorScheme = ColorScheme.fromSeed(
+          seedColor: Colors.red,
+          brightness: Brightness.dark,
+        );
+        return MaterialApp.router(
+          routerConfig: router,
+          theme: ThemeData(colorScheme: colorScheme),
+        );
+      },
+    );
+  }
+}
+
+class _RouterBuilder extends StatefulWidget {
+  final List<NavigatorObserver> navigatorObservers;
+  final Widget Function(BuildContext context, GoRouter router) builder;
+
+  const _RouterBuilder({
+    super.key,
+    this.navigatorObservers = const [],
+    required this.builder,
+  });
+
+  @override
+  State<_RouterBuilder> createState() => _RouterBuilderState();
+}
+
+class _RouterBuilderState extends State<_RouterBuilder> {
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    _router = _initRouter(initialLocation: '/home');
+  }
+
+  @override
+  void dispose() {
+    _router.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.builder(context, _router);
+  }
+
+  GoRouter _initRouter({required String initialLocation}) {
+    return GoRouter(
+      debugLogDiagnostics: kDebugMode,
+      observers: widget.navigatorObservers,
+      initialLocation: initialLocation,
+      overridePlatformDefaultLocation: true,
+
+      errorBuilder: (context, state) => const ErrorPage(),
+      routes: [
+        GoRoute(
+          path: '/home',
+          name: 'home',
+          builder: (context, state) {
+            return SelectionArea(child: HomePage());
+          },
+        ),
+      ],
     );
   }
 }
