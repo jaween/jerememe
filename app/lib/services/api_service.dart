@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:app/services/models/frame.dart';
+import 'package:app/services/models/meme.dart';
 import 'package:app/services/models/search.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -51,6 +52,27 @@ class ApiService {
       request: () => _client.get(Uri.parse(url), headers: _headers),
       handleResponse: (json) {
         return Right(FramesResponse.fromJson(json));
+      },
+    );
+  }
+
+  Future<Either<String, MemeResponse>> postMeme({
+    required String mediaId,
+    required int startFrame,
+    required int endFrame,
+  }) {
+    return _makeRequest(
+      request: () => _client.post(
+        Uri.parse('$_baseUrl/meme'),
+        headers: _headers,
+        body: jsonEncode({
+          'mediaId': mediaId,
+          'startFrame': startFrame,
+          'endFrame': endFrame,
+        }),
+      ),
+      handleResponse: (json) {
+        return Right(MemeResponse.fromJson(json));
       },
     );
   }
