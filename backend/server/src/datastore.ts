@@ -1,10 +1,12 @@
 import sqlite3 from "sqlite3";
 import { S3Storage } from "./storage.js";
 
-export interface MediaQueryResult {
-  source_id: string;
-  start_time: number;
+export interface SearchResult {
+  mediaId: string;
+  startTime: number;
+  startFrame: number;
   text: string;
+  image: string;
 }
 
 export interface FrameQueryResult {
@@ -33,10 +35,10 @@ export class Datastore {
     );
   }
 
-  public async searchText(query: string): Promise<MediaQueryResult[]> {
+  public async searchText(query: string): Promise<SearchResult[]> {
     return new Promise((resolve, reject) => {
       const sql = `
-        SELECT s.media_id, s.start_frame, s.text
+        SELECT s.media_id, s.start_time, s.start_frame, s.text
         FROM subtitles_fts f
         JOIN subtitles s ON s.rowid = f.rowid
         WHERE subtitles_fts MATCH ?
@@ -46,7 +48,16 @@ export class Datastore {
         if (error) {
           return reject(error);
         }
-        resolve(rows as MediaQueryResult[]);
+        const mapped = rows.map<SearchResult>((r: any) => ({
+          mediaId: r.media_id,
+          startTime: r.start_time,
+          startFrame: r.start_frame,
+          text: r.text,
+          image: this.storage.urlFromKey(
+            this.storage.generateS3FrameKey(r.media_id, r.start_frame)
+          ),
+        }));
+        resolve(mapped);
       });
     });
   }
