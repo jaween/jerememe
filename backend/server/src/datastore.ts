@@ -9,8 +9,9 @@ export interface SearchResult {
   image: string;
 }
 
-export interface FrameQueryResult {
-  url: string;
+export interface Frame {
+  index: number;
+  image: string;
 }
 
 export class Datastore {
@@ -64,15 +65,50 @@ export class Datastore {
 
   public async fetchFrames(
     mediaId: string,
-    frameIndex: number
-  ): Promise<FrameQueryResult[]> {
-    const key = this.storage.generateS3FrameKey(mediaId, frameIndex);
-    const url = this.storage.urlFromKey(key);
-    return [
-      {
-        url: url,
-      },
-    ];
+    index: number,
+    direction?: "before" | "after",
+    count: number = 10
+  ): Promise<Frame[]> {
+    const maxFrames = await this.durationFramesOfMedia(mediaId);
+    let start: number;
+    let end: number;
+
+    if (index < 0 || index >= maxFrames) {
+      return [];
+    }
+
+    if (direction === "before") {
+      start = Math.max(index - count, 0);
+      end = index - 1;
+    } else if (direction === "after") {
+      start = Math.min(index + 1, maxFrames);
+      end = index + count;
+    } else {
+      start = Math.max(index - 10, 0);
+      end = Math.min(index + 10, maxFrames);
+    }
+
+    const results: Frame[] = [];
+    for (let i = start; i <= end; i++) {
+      const key = this.storage.generateS3FrameKey(mediaId, i);
+      const url = this.storage.urlFromKey(key);
+      results.push({ index: i, image: url });
+    }
+
+    return results;
+  }
+
+  public async durationFramesOfMedia(mediaId: string): Promise<number> {
+    return new Promise((resolve, reject) => {
+      const sql = `SELECT duration_frames FROM media WHERE id=?`;
+      this.db.all(sql, [mediaId], (error, rows) => {
+        if (error) {
+          return reject(error);
+        }
+        const row: any = rows[0];
+        resolve(row.duration_frames);
+      });
+    });
   }
 
   public close(): Promise<void> {

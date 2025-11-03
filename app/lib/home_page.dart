@@ -1,8 +1,9 @@
 import 'package:app/services/api_service.dart';
-import 'package:app/services/models/search_result.dart';
+import 'package:app/services/models/search.dart';
 import 'package:app/util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -35,9 +36,15 @@ class _HomePageState extends ConsumerState<HomePage> {
                 children: [
                   Text('Jerememe'),
                   SizedBox(height: 32),
-                  TextFormField(controller: _searchController),
+                  TextFormField(
+                    controller: _searchController,
+                    onFieldSubmitted: (_) => _onSearchSubmitted(),
+                  ),
                   SizedBox(height: 32),
-                  FilledButton(onPressed: _search, child: Text('Search')),
+                  FilledButton(
+                    onPressed: _onSearchSubmitted,
+                    child: Text('Search'),
+                  ),
                 ],
               ),
             ),
@@ -56,7 +63,18 @@ class _HomePageState extends ConsumerState<HomePage> {
                   itemCount: _results.length,
                   itemBuilder: (context, index) {
                     final result = _results[index];
-                    return SearchResultCard(result: result);
+                    return InkWell(
+                      onTap: () {
+                        context.pushNamed(
+                          'create',
+                          pathParameters: {
+                            'mediaId': result.mediaId,
+                            'frame': result.startFrame.toString(),
+                          },
+                        );
+                      },
+                      child: SearchResultCard(result: result),
+                    );
                   },
                 ),
               ),
@@ -67,14 +85,14 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  void _search() async {
+  void _onSearchSubmitted() async {
     final query = _searchController.text;
     if (query.isEmpty) {
       return;
     }
 
     final api = ref.read(apiServiceProvider);
-    final result = await api.search(query);
+    final result = await api.getSearch(query);
     if (!mounted) {
       return;
     }
@@ -85,7 +103,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         setState(
           () => _results
             ..clear()
-            ..addAll(value),
+            ..addAll(value.data),
         );
     }
   }
@@ -112,7 +130,7 @@ class SearchResultCard extends StatelessWidget {
           SizedBox(
             height: 48,
             child: Text(
-              result.text,
+              '${result.startFrame}: ${result.text}',
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,

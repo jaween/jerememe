@@ -1,3 +1,4 @@
+import 'package:app/create_page.dart';
 import 'package:app/error_page.dart';
 import 'package:app/home_page.dart';
 import 'package:flutter/foundation.dart';
@@ -45,7 +46,7 @@ class _RouterBuilderState extends State<_RouterBuilder> {
   @override
   void initState() {
     super.initState();
-    _router = _initRouter(initialLocation: '/home');
+    _router = _initRouter(initialLocation: '/');
   }
 
   @override
@@ -69,11 +70,25 @@ class _RouterBuilderState extends State<_RouterBuilder> {
       errorBuilder: (context, state) => const ErrorPage(),
       routes: [
         GoRoute(
-          path: '/home',
+          path: '/',
           name: 'home',
           builder: (context, state) {
             return SelectionArea(child: HomePage());
           },
+          routes: [
+            GoRoute(
+              path: 'create/:mediaId/:frame',
+              name: 'create',
+              builder: (context, state) {
+                final mediaId = state.pathParameters['mediaId'] as String;
+                final frameString = state.pathParameters['frame'] as String;
+                final frame = int.tryParse(frameString) ?? 0;
+                return SelectionArea(
+                  child: CreatePage(mediaId: mediaId, frameIndex: frame),
+                );
+              },
+            ),
+          ],
         ),
       ],
     );

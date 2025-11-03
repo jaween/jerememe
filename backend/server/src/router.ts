@@ -24,8 +24,16 @@ export function router(datastore: Datastore): Router {
       console.log(e);
       return res.sendStatus(400);
     }
-    const results = await datastore.fetchFrames(query.media_id, query.frame);
-    return res.json({ data: results });
+    const results = await datastore.fetchFrames(
+      query.media_id,
+      query.index,
+      query.direction,
+      query.count
+    );
+    return res.json({
+      data: results,
+      meta: { maxIndex: await datastore.durationFramesOfMedia(query.media_id) },
+    });
   });
 
   return router;
@@ -39,7 +47,9 @@ type SearchQueryParams = z.infer<typeof searchQuerySchema>;
 
 const framesQuerySchema = z.object({
   media_id: z.string(),
-  frame: z.coerce.number().int(),
+  index: z.coerce.number().int(),
+  direction: z.enum(["before", "after"]).optional(),
+  count: z.coerce.number().int().optional(),
 });
 
 type FramesQueryParams = z.infer<typeof framesQuerySchema>;

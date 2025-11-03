@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:app/services/models/search_result.dart';
+import 'package:app/services/models/frame.dart';
+import 'package:app/services/models/search.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -25,13 +26,31 @@ class ApiService {
 
   void dispose() => _client.close();
 
-  Future<Either<String, List<SearchResult>>> search(String query) {
+  Future<Either<String, SearchResponse>> getSearch(String query) {
     final url = Uri.encodeFull('$_baseUrl/search?q="$query"');
     return _makeRequest(
       request: () => _client.get(Uri.parse(url), headers: _headers),
       handleResponse: (json) {
-        final list = json as List;
-        return Right(list.map((e) => SearchResult.fromJson(e)).toList());
+        return Right(SearchResponse.fromJson(json));
+      },
+    );
+  }
+
+  Future<Either<String, FramesResponse>> getFrames({
+    required String mediaId,
+    required int index,
+    required FramesDirection? direction,
+  }) {
+    final query = [
+      'media_id=$mediaId',
+      'index=$index',
+      if (direction != null) 'direction=${direction.name}',
+    ].join('&');
+    final url = Uri.encodeFull('$_baseUrl/media?$query');
+    return _makeRequest(
+      request: () => _client.get(Uri.parse(url), headers: _headers),
+      handleResponse: (json) {
+        return Right(FramesResponse.fromJson(json));
       },
     );
   }
@@ -69,7 +88,7 @@ class ApiService {
   }) {
     final json = jsonDecode(response.body);
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return handleResponse(json['data']);
+      return handleResponse(json);
     }
     debugPrint('[API] Response status code was ${response.statusCode}');
     return Left('Something went wrong');

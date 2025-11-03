@@ -1,7 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-part 'search_result.freezed.dart';
-part 'search_result.g.dart';
+part 'search.freezed.dart';
+part 'search.g.dart';
 
 @freezed
 abstract class SearchResult with _$SearchResult {
@@ -15,4 +15,13 @@ abstract class SearchResult with _$SearchResult {
 
   factory SearchResult.fromJson(Map<String, Object?> json) =>
       _$SearchResultFromJson(json);
+}
+
+@freezed
+abstract class SearchResponse with _$SearchResponse {
+  const factory SearchResponse({required List<SearchResult> data}) =
+      _SearchResponse;
+
+  factory SearchResponse.fromJson(Map<String, Object?> json) =>
+      _$SearchResponseFromJson(json);
 }
