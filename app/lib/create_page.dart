@@ -5,6 +5,7 @@ import 'package:app/services/models/frame.dart';
 import 'package:app/services/models/meme.dart';
 import 'package:app/util.dart';
 import 'package:app/widgets/meme_display.dart';
+import 'package:app/widgets/meme_preview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -71,43 +72,69 @@ class _CreatePageState extends ConsumerState<CreatePage> {
           ),
           Expanded(
             child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TextFormField(
-                    controller: _textController,
-                    minLines: 4,
-                    maxLines: 4,
-                  ),
-                  SizedBox(height: 32),
-                  FilledButton(
-                    onPressed: _creating ? null : _postMeme,
-                    child: Text('Generate'),
-                  ),
-                  SizedBox(
-                    width: 500,
-                    child: _creating
-                        ? Center(child: CircularProgressIndicator())
-                        : meme != null
-                        ? Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
+              child: Container(
+                constraints: BoxConstraints(maxWidth: 500),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Builder(
+                      builder: (context) {
+                        if (_creating) {
+                          return Center(child: CircularProgressIndicator());
+                        }
+                        if (meme == null) {
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              MemeDisplay(meme: meme),
-                              Row(
-                                children: [
-                                  OutlinedButton.icon(
-                                    onPressed: () => _copy(meme.url),
-                                    label: Text(meme.url.substring(0, 20)),
-                                    icon: Icon(Icons.copy),
-                                  ),
-                                ],
+                              MemePreview(
+                                key: ValueKey(_range.hashCode),
+                                textController: _textController,
+                                frames: _frames
+                                    .where(
+                                      (e) =>
+                                          e.index >= _range.startFrame &&
+                                          e.index <= _range.endFrame,
+                                    )
+                                    .toList(),
+                              ),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: ValueListenableBuilder(
+                                  valueListenable: _textController,
+                                  builder: (context, value, child) {
+                                    return TextButton.icon(
+                                      onPressed: value.text.isEmpty
+                                          ? null
+                                          : _textController.clear,
+                                      label: Text('Remove text'),
+                                      icon: Icon(Icons.clear),
+                                    );
+                                  },
+                                ),
                               ),
                             ],
-                          )
-                        : null,
-                  ),
-                ],
+                          );
+                        }
+                        return MemeDisplay(meme: meme);
+                      },
+                    ),
+                    if (meme != null) ...[
+                      SizedBox(height: 16),
+                      OutlinedButton.icon(
+                        onPressed: () => _copy(meme.url),
+                        label: Text(meme.url.substring(0, 20)),
+                        icon: Icon(Icons.copy),
+                      ),
+                    ],
+                    SizedBox(height: 32),
+                    FilledButton.icon(
+                      onPressed: _creating ? null : _postMeme,
+                      label: Text('Generate'),
+                      icon: Icon(Icons.done),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -168,7 +195,7 @@ class _CreatePageState extends ConsumerState<CreatePage> {
   void _postMeme() async {
     final startIndex = _range.startFrame;
     final endIndex = _range.endFrame;
-    final text = _textController.text.trim();
+    final text = _textController.text;
 
     final api = ref.read(apiServiceProvider);
     setState(() => _creating = true);

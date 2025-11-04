@@ -33,3 +33,9 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  fonts:
+    - family: Impact
+      fonts:
+        - asset: assets/fonts/impact.ttf
+          weight: 500
