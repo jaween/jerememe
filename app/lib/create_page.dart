@@ -64,7 +64,10 @@ class _CreatePageState extends ConsumerState<CreatePage> {
             width: 200,
             child: _FrameRangePicker(
               range: _range,
-              onRangeChanged: (range) => setState(() => _range = range),
+              onRangeChanged: (range) {
+                setState(() => _range = range);
+                _textController.text = _createCaption();
+              },
               isFetchingBefore: _isFetchingBefore,
               isFetchingAfter: _isFetchingAfter,
               frames: List.of(_frames),
@@ -207,7 +210,28 @@ class _CreatePageState extends ConsumerState<CreatePage> {
             ..clear()
             ..addAll(newFrames);
         });
+        if (_textController.text.isEmpty) {
+          _textController.text = _createCaption();
+        }
     }
+  }
+
+  String _createCaption() {
+    final selectedFrames = _frames
+        .where(
+          (e) => e.index >= _range.startFrame && e.index <= _range.endFrame,
+        )
+        .toList();
+    final usedLines = <int>{};
+    final subtitles = <String>[];
+    for (final frame in selectedFrames) {
+      final subtitle = frame.subtitle;
+      if (subtitle != null && !usedLines.contains(subtitle.lineNumber)) {
+        usedLines.add(subtitle.lineNumber);
+        subtitles.add(subtitle.text);
+      }
+    }
+    return subtitles.join('\n');
   }
 
   void _postMeme() async {

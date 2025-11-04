@@ -5,9 +5,22 @@ part 'frame.g.dart';
 
 @freezed
 abstract class Frame with _$Frame {
-  const factory Frame({required int index, required String image}) = _Frame;
+  const factory Frame({
+    required int index,
+    required String image,
+    required Subtitle? subtitle,
+  }) = _Frame;
 
   factory Frame.fromJson(Map<String, Object?> json) => _$FrameFromJson(json);
+}
+
+@freezed
+abstract class Subtitle with _$Subtitle {
+  const factory Subtitle({required int lineNumber, required String text}) =
+      _Subtitle;
+
+  factory Subtitle.fromJson(Map<String, Object?> json) =>
+      _$SubtitleFromJson(json);
 }
 
 enum FramesDirection { before, after }

@@ -9,9 +9,15 @@ export interface SearchResult {
   image: string;
 }
 
+export interface Subtitle {
+  lineNumber: number;
+  text: string;
+}
+
 export interface Frame {
   index: number;
   image: string;
+  subtitle: Subtitle | null;
 }
 
 export class Datastore {
@@ -102,7 +108,8 @@ export class Datastore {
     for (let i = start; i <= end; i++) {
       const key = this.storage.generateS3FrameKey(mediaId, i);
       const url = this.storage.urlForKey(key);
-      results.push({ index: i, image: url });
+      const subtitle = await this.fetchSubtitleByFrame(mediaId, i);
+      results.push({ index: i, image: url, subtitle: subtitle });
     }
 
     return results;
@@ -127,7 +134,8 @@ export class Datastore {
     for (let i = startFrame; i <= endFrame; i++) {
       const key = this.storage.generateS3FrameKey(mediaId, i);
       const url = this.storage.urlForKey(key);
-      results.push({ index: i, image: url });
+      const subtitle = await this.fetchSubtitleByFrame(mediaId, i);
+      results.push({ index: i, image: url, subtitle: subtitle });
     }
 
     return results;
@@ -158,6 +166,35 @@ export class Datastore {
           return reject(error);
         }
         resolve((row as any)?.total ?? 0);
+      });
+    });
+  }
+
+  public async fetchSubtitleByFrame(
+    mediaId: string,
+    frameIndex: number
+  ): Promise<Subtitle | null> {
+    return new Promise((resolve, reject) => {
+      const sql = `
+      SELECT line_number, text
+      FROM subtitles
+      WHERE media_id = ? 
+        AND start_frame <= ? 
+        AND end_frame >= ?
+      LIMIT 1;
+    `;
+      this.db.get(sql, [mediaId, frameIndex, frameIndex], (error, row: any) => {
+        if (error) {
+          return reject(error);
+        }
+        if (row as any) {
+          resolve({
+            lineNumber: row.line_number,
+            text: row.text,
+          });
+        } else {
+          resolve(null);
+        }
       });
     });
   }
