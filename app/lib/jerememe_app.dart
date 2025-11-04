@@ -19,7 +19,21 @@ class JerememeApp extends StatelessWidget {
         );
         return MaterialApp.router(
           routerConfig: router,
-          theme: ThemeData(colorScheme: colorScheme),
+          theme: ThemeData(
+            colorScheme: colorScheme,
+            inputDecorationTheme: InputDecorationTheme(
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(24)),
+              ),
+            ),
+            filledButtonTheme: FilledButtonThemeData(
+              style: FilledButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(8)),
+                ),
+              ),
+            ),
+          ),
         );
       },
     );

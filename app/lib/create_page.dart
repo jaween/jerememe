@@ -56,7 +56,7 @@ class _CreatePageState extends ConsumerState<CreatePage> {
   Widget build(BuildContext context) {
     final meme = _meme;
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(scrolledUnderElevation: 0),
       body: Row(
         children: [
           SizedBox(
@@ -66,7 +66,7 @@ class _CreatePageState extends ConsumerState<CreatePage> {
               onRangeChanged: (range) => setState(() => _range = range),
               isFetchingBefore: _isFetchingBefore,
               isFetchingAfter: _isFetchingAfter,
-              frames: _frames,
+              frames: List.of(_frames),
               onFetchFrames: _fetchFrames,
             ),
           ),
@@ -254,6 +254,9 @@ class _FrameRangePicker extends StatefulWidget {
 class _FrameRangePickerState extends State<_FrameRangePicker> {
   final _scrollController = ScrollController();
   bool _justSetStart = false;
+  bool _initialJumpDone = false;
+
+  static const _itemHeight = 140.0;
 
   @override
   void initState() {
@@ -268,44 +271,81 @@ class _FrameRangePickerState extends State<_FrameRangePicker> {
   }
 
   @override
+  void didUpdateWidget(covariant _FrameRangePicker oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.frames.isNotEmpty && !_initialJumpDone) {
+      _performInitialJumpNextFrame();
+    }
+    final oldFrames = oldWidget.frames;
+    final newFrames = widget.frames;
+    if (newFrames.length > oldFrames.length && oldFrames.isNotEmpty) {
+      _maybeJumpDownToPreviousPosition(oldFrames, newFrames);
+    }
+  }
+
+  void _performInitialJumpNextFrame() async {
+    await WidgetsBinding.instance.endOfFrame;
+    if (mounted && _scrollController.hasClients) {
+      final viewport = _scrollController.position.viewportDimension;
+      _scrollController.jumpTo(
+        _itemHeight * widget.frames.length / 2 - viewport / 2,
+      );
+      setState(() => _initialJumpDone = true);
+    }
+  }
+
+  void _maybeJumpDownToPreviousPosition(
+    List<Frame> oldFrames,
+    List<Frame> newFrames,
+  ) {
+    final insertedAtTop = newFrames.first.index != oldFrames.first.index;
+    if (insertedAtTop && _scrollController.hasClients) {
+      final newFrameCount = newFrames.length - oldFrames.length;
+      final current = _scrollController.position.pixels;
+      _scrollController.jumpTo(current + _itemHeight * newFrameCount);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      controller: _scrollController,
-      itemCount: widget.frames.length,
-      itemBuilder: (context, index) {
-        final frame = widget.frames[index];
-        final selected =
-            frame.index >= widget.range.startFrame &&
-            frame.index <= widget.range.endFrame;
-        return InkWell(
-          key: ValueKey(frame.index.toString()),
-          onTap: () {
-            if (!_justSetStart) {
-              widget.onRangeChanged(
-                _FrameRange(startFrame: frame.index, endFrame: frame.index),
-              );
-              setState(() => _justSetStart = true);
-            } else {
-              widget.onRangeChanged(
-                _FrameRange(
-                  startFrame: min(widget.range.startFrame, frame.index),
-                  endFrame: max(frame.index, widget.range.startFrame),
-                ),
-              );
-              setState(() => _justSetStart = false);
-            }
-          },
-          child: Container(
-            padding: const EdgeInsets.all(4.0),
-            color: selected ? ColorScheme.of(context).primary : null,
-            child: SizedBox(
-              width: 150,
-              height: 125,
+    return Opacity(
+      opacity: _initialJumpDone ? 1.0 : 0.0,
+      child: ListView.builder(
+        controller: _scrollController,
+        itemCount: widget.frames.length,
+        itemBuilder: (context, index) {
+          final frame = widget.frames[index];
+          final selected =
+              frame.index >= widget.range.startFrame &&
+              frame.index <= widget.range.endFrame;
+          return InkWell(
+            key: ValueKey(frame.index.toString()),
+            onTap: () {
+              if (!_justSetStart) {
+                widget.onRangeChanged(
+                  _FrameRange(startFrame: frame.index, endFrame: frame.index),
+                );
+                setState(() => _justSetStart = true);
+              } else {
+                widget.onRangeChanged(
+                  _FrameRange(
+                    startFrame: min(widget.range.startFrame, frame.index),
+                    endFrame: max(frame.index, widget.range.startFrame),
+                  ),
+                );
+                setState(() => _justSetStart = false);
+              }
+            },
+            child: Container(
+              width: 180,
+              height: _itemHeight,
+              padding: const EdgeInsets.all(4.0),
+              color: selected ? ColorScheme.of(context).primary : null,
               child: Image.network(frame.image),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
