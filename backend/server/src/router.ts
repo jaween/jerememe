@@ -19,8 +19,11 @@ export function router(
     } catch (e) {
       return res.sendStatus(400);
     }
-    const results = await datastore.searchText(query.q);
-    return res.json({ data: results });
+    const { results, totalResults } = await datastore.searchText(
+      query.q,
+      query.offset
+    );
+    return res.json({ data: results, meta: { totalResults: totalResults } });
   });
 
   router.get("/media", async (req: Request, res: Response) => {
@@ -78,6 +81,7 @@ export function router(
 
 const searchQuerySchema = z.object({
   q: z.string(),
+  offset: z.coerce.number().optional(),
 });
 
 type SearchQueryParams = z.infer<typeof searchQuerySchema>;

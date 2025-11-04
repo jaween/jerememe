@@ -27,10 +27,17 @@ class ApiService {
 
   void dispose() => _client.close();
 
-  Future<Either<String, SearchResponse>> getSearch(String query) {
-    final url = Uri.encodeFull('$_baseUrl/search?q="$query"');
+  Future<Either<String, SearchResponse>> getSearch({
+    required String query,
+    int offset = 0,
+  }) {
+    final queryString = [
+      'q=${Uri.encodeQueryComponent(query)}',
+      'offset=$offset',
+    ].join('&');
+    final url = Uri.parse('$_baseUrl/search?$queryString');
     return _makeRequest(
-      request: () => _client.get(Uri.parse(url), headers: _headers),
+      request: () => _client.get(url, headers: _headers),
       handleResponse: (json) {
         return Right(SearchResponse.fromJson(json));
       },

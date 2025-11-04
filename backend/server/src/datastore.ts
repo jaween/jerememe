@@ -36,19 +36,23 @@ export class Datastore {
     );
   }
 
-  public async searchText(query: string): Promise<SearchResult[]> {
+  public async searchText(
+    query: string,
+    offset = 0,
+    limit = 20
+  ): Promise<{ results: SearchResult[]; totalResults: number }> {
+    const totalResults = await this.countResults(query);
     return new Promise((resolve, reject) => {
       const sql = `
-        SELECT s.media_id, s.start_time, s.start_frame, s.text
-        FROM subtitles_fts f
-        JOIN subtitles s ON s.rowid = f.rowid
-        WHERE subtitles_fts MATCH ?
-        ORDER BY s.media_id, s.line_number;
-      `;
-      this.db.all(sql, [query], (error, rows) => {
-        if (error) {
-          return reject(error);
-        }
+      SELECT s.media_id, s.start_time, s.start_frame, s.text
+      FROM subtitles_fts f
+      JOIN subtitles s ON s.rowid = f.rowid
+      WHERE subtitles_fts MATCH ?
+      ORDER BY s.media_id, s.line_number
+      LIMIT ? OFFSET ?;
+    `;
+      this.db.all(sql, [query, limit, offset], (error, rows) => {
+        if (error) return reject(error);
         const mapped = rows.map<SearchResult>((r: any) => ({
           mediaId: r.media_id,
           startTime: r.start_time,
@@ -58,7 +62,7 @@ export class Datastore {
             this.storage.generateS3FrameKey(r.media_id, r.start_frame)
           ),
         }));
-        resolve(mapped);
+        resolve({ results: mapped, totalResults: totalResults });
       });
     });
   }
@@ -132,6 +136,22 @@ export class Datastore {
         }
         const row: any = rows[0];
         resolve(row.duration_frames);
+      });
+    });
+  }
+
+  public async countResults(query: string): Promise<number> {
+    return new Promise((resolve, reject) => {
+      const sql = `
+      SELECT COUNT(*) as total
+      FROM subtitles_fts
+      WHERE subtitles_fts MATCH ?;
+    `;
+      this.db.get(sql, [query], (error, row) => {
+        if (error) {
+          return reject(error);
+        }
+        resolve((row as any)?.total ?? 0);
       });
     });
   }

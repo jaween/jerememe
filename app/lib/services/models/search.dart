@@ -19,9 +19,19 @@ abstract class SearchResult with _$SearchResult {
 
 @freezed
 abstract class SearchResponse with _$SearchResponse {
-  const factory SearchResponse({required List<SearchResult> data}) =
-      _SearchResponse;
+  const factory SearchResponse({
+    required List<SearchResult> data,
+    required SearchMeta meta,
+  }) = _SearchResponse;
 
   factory SearchResponse.fromJson(Map<String, Object?> json) =>
       _$SearchResponseFromJson(json);
+}
+
+@freezed
+abstract class SearchMeta with _$SearchMeta {
+  const factory SearchMeta({required int totalResults}) = _SearchMeta;
+
+  factory SearchMeta.fromJson(Map<String, Object?> json) =>
+      _$SearchMetaFromJson(json);
 }
