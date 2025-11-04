@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:app/services/api_service.dart';
 import 'package:app/services/models/frame.dart';
 import 'package:app/util.dart';
@@ -22,14 +24,15 @@ class CreatePage extends ConsumerStatefulWidget {
 }
 
 class _CreatePageState extends ConsumerState<CreatePage> {
-  final _scrollController = ScrollController();
   final _frames = <Frame>[];
   int? _maxIndex;
+
+  late _FrameRange _range = _FrameRange(
+    startFrame: widget.frameIndex,
+    endFrame: widget.frameIndex,
+  );
   bool _isFetchingAfter = false;
   bool _isFetchingBefore = false;
-
-  int? _startIndex;
-  int? _endIndex;
 
   String? _url;
   bool _creating = false;
@@ -37,14 +40,7 @@ class _CreatePageState extends ConsumerState<CreatePage> {
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScrollUpdate);
     _fetchFrames();
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
   }
 
   @override
@@ -56,34 +52,13 @@ class _CreatePageState extends ConsumerState<CreatePage> {
         children: [
           SizedBox(
             width: 200,
-            child: ListView.builder(
-              controller: _scrollController,
-              itemCount: _frames.length,
-              itemBuilder: (context, index) {
-                final frame = _frames[index];
-                return InkWell(
-                  onTap: () {
-                    setState(() {
-                      if (_startIndex == null) {
-                        _startIndex = frame.index;
-                      } else {
-                        if (_endIndex == null) {
-                          _endIndex = frame.index;
-                        } else {
-                          _startIndex = frame.index;
-                          _endIndex = null;
-                        }
-                      }
-                    });
-                  },
-                  child: SizedBox(
-                    key: ValueKey('${widget.mediaId}_${frame.index}'),
-                    width: 150,
-                    height: 125,
-                    child: Image.network(frame.image),
-                  ),
-                );
-              },
+            child: _FrameRangePicker(
+              range: _range,
+              onRangeChanged: (range) => setState(() => _range = range),
+              isFetchingBefore: _isFetchingBefore,
+              isFetchingAfter: _isFetchingAfter,
+              frames: _frames,
+              onFetchFrames: _fetchFrames,
             ),
           ),
           Expanded(
@@ -92,9 +67,7 @@ class _CreatePageState extends ConsumerState<CreatePage> {
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Media ${widget.mediaId}, frame ${widget.frameIndex}'),
-                  Text('Start Index $_startIndex'),
-                  Text('End Index $_endIndex'),
+                  SizedBox(height: 32),
                   FilledButton(
                     onPressed: _creating ? null : _postMeme,
                     child: Text('Generate'),
@@ -179,37 +152,9 @@ class _CreatePageState extends ConsumerState<CreatePage> {
     }
   }
 
-  void _onScrollUpdate() {
-    if (!_scrollController.hasClients) {
-      return;
-    }
-
-    const fetchTrigger = 200;
-
-    // After
-    final position = _scrollController.position;
-    if (position.pixels >= position.maxScrollExtent - fetchTrigger &&
-        !_isFetchingAfter &&
-        position.userScrollDirection == ScrollDirection.reverse) {
-      final lastFrame = _frames.isNotEmpty ? _frames.last.index : 0;
-      _fetchFrames(direction: FramesDirection.after, frameIndex: lastFrame);
-    }
-
-    // Before
-    if (position.pixels <= position.minScrollExtent + fetchTrigger &&
-        !_isFetchingBefore &&
-        position.userScrollDirection == ScrollDirection.forward) {
-      final firstFrame = _frames.isNotEmpty ? _frames.first.index : 0;
-      _fetchFrames(direction: FramesDirection.before, frameIndex: firstFrame);
-    }
-  }
-
   void _postMeme() async {
-    final startIndex = _startIndex;
-    final endIndex = _endIndex;
-    if (startIndex == null || endIndex == null) {
-      return;
-    }
+    final startIndex = _range.startFrame;
+    final endIndex = _range.endFrame;
 
     final api = ref.read(apiServiceProvider);
     setState(() => _creating = true);
@@ -239,4 +184,126 @@ class _CreatePageState extends ConsumerState<CreatePage> {
       ),
     );
   }
+}
+
+class _FrameRangePicker extends StatefulWidget {
+  final _FrameRange range;
+  final bool isFetchingBefore;
+  final bool isFetchingAfter;
+  final void Function(_FrameRange range) onRangeChanged;
+  final List<Frame> frames;
+  final void Function({FramesDirection? direction, int? frameIndex})
+  onFetchFrames;
+
+  const _FrameRangePicker({
+    super.key,
+    required this.range,
+    required this.onRangeChanged,
+    required this.isFetchingBefore,
+    required this.isFetchingAfter,
+    required this.frames,
+    required this.onFetchFrames,
+  });
+
+  @override
+  State<_FrameRangePicker> createState() => _FrameRangePickerState();
+}
+
+class _FrameRangePickerState extends State<_FrameRangePicker> {
+  final _scrollController = ScrollController();
+  bool _justSetStart = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScrollUpdate);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      controller: _scrollController,
+      itemCount: widget.frames.length,
+      itemBuilder: (context, index) {
+        final frame = widget.frames[index];
+        final selected =
+            frame.index >= widget.range.startFrame &&
+            frame.index <= widget.range.endFrame;
+        return InkWell(
+          key: ValueKey(frame.index.toString()),
+          onTap: () {
+            if (!_justSetStart) {
+              widget.onRangeChanged(
+                _FrameRange(startFrame: frame.index, endFrame: frame.index),
+              );
+              setState(() => _justSetStart = true);
+            } else {
+              widget.onRangeChanged(
+                _FrameRange(
+                  startFrame: min(widget.range.startFrame, frame.index),
+                  endFrame: max(frame.index, widget.range.startFrame),
+                ),
+              );
+              setState(() => _justSetStart = false);
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.all(4.0),
+            color: selected ? ColorScheme.of(context).primary : null,
+            child: SizedBox(
+              width: 150,
+              height: 125,
+              child: Image.network(frame.image),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _onScrollUpdate() {
+    if (!_scrollController.hasClients) {
+      return;
+    }
+
+    const fetchTrigger = 200;
+
+    // After
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - fetchTrigger &&
+        !widget.isFetchingAfter &&
+        position.userScrollDirection == ScrollDirection.reverse) {
+      final lastFrame = widget.frames.isNotEmpty ? widget.frames.last.index : 0;
+      widget.onFetchFrames(
+        direction: FramesDirection.after,
+        frameIndex: lastFrame,
+      );
+    }
+
+    // Before
+    if (position.pixels <= position.minScrollExtent + fetchTrigger &&
+        !widget.isFetchingBefore &&
+        position.userScrollDirection == ScrollDirection.forward) {
+      final firstFrame = widget.frames.isNotEmpty
+          ? widget.frames.first.index
+          : 0;
+      widget.onFetchFrames(
+        direction: FramesDirection.before,
+        frameIndex: firstFrame,
+      );
+    }
+  }
+}
+
+class _FrameRange {
+  final int startFrame;
+  final int endFrame;
+
+  _FrameRange({required this.startFrame, required this.endFrame});
 }
