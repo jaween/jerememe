@@ -67,6 +67,7 @@ class ApiService {
     required String mediaId,
     required int startFrame,
     required int endFrame,
+    required String text,
   }) {
     return _makeRequest(
       request: () => _client.post(
@@ -76,6 +77,7 @@ class ApiService {
           'mediaId': mediaId,
           'startFrame': startFrame,
           'endFrame': endFrame,
+          'text': text,
         }),
       ),
       handleResponse: (json) {

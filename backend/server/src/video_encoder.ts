@@ -4,7 +4,11 @@ import { Frame } from "./datastore";
 import axios from "axios";
 
 export class VideoEncoder {
-  public async encode(frames: Frame[], frameRate: number): Promise<Buffer> {
+  public async encode(
+    frames: Frame[],
+    frameRate: number,
+    text: string
+  ): Promise<Buffer> {
     if (frames.length === 0) {
       throw new Error("No frames provided.");
     }
@@ -27,6 +31,7 @@ export class VideoEncoder {
       },
     });
 
+    const escapedText = this.ffmpegEscape(text);
     const ffmpeg = spawn("ffmpeg", [
       "-hide_banner",
       "-loglevel",
@@ -39,6 +44,8 @@ export class VideoEncoder {
       frameRate.toString(),
       "-i",
       "pipe:0",
+      "-vf",
+      `drawtext=fontfile=/usr/share/fonts/truetype/msttcorefonts/Impact.ttf:text='${escapedText}':fontcolor=white:fontsize=26:borderw=2:bordercolor=black:text_align=center:x=(w-text_w)/2:y=h-text_h-20`,
       "-pix_fmt",
       "yuv420p",
       "-vcodec",
@@ -49,7 +56,6 @@ export class VideoEncoder {
       "webm",
       "pipe:1",
     ]);
-
     inputStream.pipe(ffmpeg.stdin);
 
     const chunks: Buffer[] = [];
@@ -64,5 +70,13 @@ export class VideoEncoder {
         resolve(Buffer.concat(chunks));
       });
     });
+  }
+
+  private ffmpegEscape(text: string): string {
+    return text
+      .replace(/\\/g, "\\\\")
+      .replace(/'/g, "\\'")
+      .replace(/:/g, "\\:")
+      .replace(/%/g, "\\%");
   }
 }

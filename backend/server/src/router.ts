@@ -60,8 +60,9 @@ export function router(
 
     let video: Buffer;
     try {
-      video = await videoEncoder.encode(frames, 24);
+      video = await videoEncoder.encode(frames, 24, body.text);
     } catch (e) {
+      console.error(e);
       return res.sendStatus(500);
     }
 
@@ -99,7 +100,7 @@ const postMemeBodySchema = z.object({
   mediaId: z.string(),
   startFrame: z.coerce.number().int(),
   endFrame: z.coerce.number().int(),
-  text: z.string().optional(),
+  text: z.string(),
 });
 
 type PostMemeBody = z.infer<typeof postMemeBodySchema>;

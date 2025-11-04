@@ -26,6 +26,7 @@ class CreatePage extends ConsumerStatefulWidget {
 class _CreatePageState extends ConsumerState<CreatePage> {
   final _frames = <Frame>[];
   int? _maxIndex;
+  final _textController = TextEditingController();
 
   late _FrameRange _range = _FrameRange(
     startFrame: widget.frameIndex,
@@ -41,6 +42,12 @@ class _CreatePageState extends ConsumerState<CreatePage> {
   void initState() {
     super.initState();
     _fetchFrames();
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
   }
 
   @override
@@ -67,6 +74,11 @@ class _CreatePageState extends ConsumerState<CreatePage> {
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  TextFormField(
+                    controller: _textController,
+                    minLines: 4,
+                    maxLines: 4,
+                  ),
                   SizedBox(height: 32),
                   FilledButton(
                     onPressed: _creating ? null : _postMeme,
@@ -155,6 +167,7 @@ class _CreatePageState extends ConsumerState<CreatePage> {
   void _postMeme() async {
     final startIndex = _range.startFrame;
     final endIndex = _range.endFrame;
+    final text = _textController.text.trim();
 
     final api = ref.read(apiServiceProvider);
     setState(() => _creating = true);
@@ -162,6 +175,7 @@ class _CreatePageState extends ConsumerState<CreatePage> {
       mediaId: widget.mediaId,
       startFrame: startIndex,
       endFrame: endIndex,
+      text: text,
     );
     if (!mounted) {
       return;
