@@ -41,7 +41,8 @@ export class Datastore {
     offset = 0,
     limit = 20
   ): Promise<{ results: SearchResult[]; totalResults: number }> {
-    const totalResults = await this.countResults(query);
+    const safeQuery = this.escapeFtsQuery(query);
+    const totalResults = await this.countResults(safeQuery);
     return new Promise((resolve, reject) => {
       const sql = `
       SELECT s.media_id, s.start_time, s.start_frame, s.text
@@ -51,7 +52,7 @@ export class Datastore {
       ORDER BY s.media_id, s.line_number
       LIMIT ? OFFSET ?;
     `;
-      this.db.all(sql, [query, limit, offset], (error, rows) => {
+      this.db.all(sql, [safeQuery, limit, offset], (error, rows) => {
         if (error) return reject(error);
         const mapped = rows.map<SearchResult>((r: any) => ({
           mediaId: r.media_id,
@@ -65,6 +66,11 @@ export class Datastore {
         resolve({ results: mapped, totalResults: totalResults });
       });
     });
+  }
+
+  private escapeFtsQuery(query: string): string {
+    const escaped = query.replace(/"/g, '""').trim();
+    return `"${escaped}"`;
   }
 
   public async fetchFrames(

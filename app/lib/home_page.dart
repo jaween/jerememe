@@ -118,7 +118,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   void _onSearchSubmitted() async {
-    final query = _searchController.text;
+    final query = _searchController.text.trim();
     if (query.isEmpty) {
       return;
     }
