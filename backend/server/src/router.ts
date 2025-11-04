@@ -1,6 +1,6 @@
 import { Request, Response, Router } from "express";
 import { Datastore } from "./datastore";
-import { VideoEncoder } from "./video_encoder";
+import { EncodingResult, VideoEncoder } from "./video_encoder";
 import { S3Storage } from "./storage";
 import shortUUID from "short-uuid";
 import z from "zod";
@@ -58,23 +58,23 @@ export function router(
       body.endFrame
     );
 
-    let video: Buffer;
+    let encodingResult: EncodingResult;
     try {
-      video = await videoEncoder.encode(frames, 24, body.text);
+      encodingResult = await videoEncoder.encode(frames, 24, body.text);
     } catch (e) {
       console.error(e);
       return res.sendStatus(500);
     }
 
-    const videoKey = storage.generateMemeKey(shortUUID.generate());
+    const key = storage.generateMemeKey(shortUUID.generate());
     try {
-      await storage.upload(videoKey, video, "video/webm");
+      await storage.upload(key, encodingResult.data, encodingResult.mimeType);
     } catch (e) {
       return res.sendStatus(500);
     }
 
-    const url = storage.urlForKey(videoKey);
-    return res.json({ data: { url: url } });
+    const url = storage.urlForKey(key);
+    return res.json({ data: { url: url, isVideo: encodingResult.isVideo } });
   });
 
   return router;

@@ -2,8 +2,9 @@ import 'dart:math';
 
 import 'package:app/services/api_service.dart';
 import 'package:app/services/models/frame.dart';
+import 'package:app/services/models/meme.dart';
 import 'package:app/util.dart';
-import 'package:app/widgets/video_player.dart';
+import 'package:app/widgets/meme_display.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -35,7 +36,7 @@ class _CreatePageState extends ConsumerState<CreatePage> {
   bool _isFetchingAfter = false;
   bool _isFetchingBefore = false;
 
-  String? _url;
+  Meme? _meme;
   bool _creating = false;
 
   @override
@@ -52,7 +53,7 @@ class _CreatePageState extends ConsumerState<CreatePage> {
 
   @override
   Widget build(BuildContext context) {
-    final url = _url;
+    final meme = _meme;
     return Scaffold(
       appBar: AppBar(),
       body: Row(
@@ -88,16 +89,16 @@ class _CreatePageState extends ConsumerState<CreatePage> {
                     width: 500,
                     child: _creating
                         ? Center(child: CircularProgressIndicator())
-                        : url != null
+                        : meme != null
                         ? Column(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              MemeVideoPlayer(url: url),
+                              MemeDisplay(meme: meme),
                               Row(
                                 children: [
                                   OutlinedButton.icon(
-                                    onPressed: () => _copy(url),
-                                    label: Text(url.substring(0, 20)),
+                                    onPressed: () => _copy(meme.url),
+                                    label: Text(meme.url.substring(0, 20)),
                                     icon: Icon(Icons.copy),
                                   ),
                                 ],
@@ -185,7 +186,7 @@ class _CreatePageState extends ConsumerState<CreatePage> {
       case Left(:final value):
         showError(context: context, message: value);
       case Right(:final value):
-        setState(() => _url = value.data.url);
+        setState(() => _meme = value.data);
     }
   }
 

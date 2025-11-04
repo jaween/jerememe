@@ -5,7 +5,7 @@ part 'meme.g.dart';
 
 @freezed
 abstract class Meme with _$Meme {
-  const factory Meme({required String url}) = _Meme;
+  const factory Meme({required String url, required bool isVideo}) = _Meme;
 
   factory Meme.fromJson(Map<String, Object?> json) => _$MemeFromJson(json);
 }
