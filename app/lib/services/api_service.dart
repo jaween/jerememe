@@ -68,22 +68,54 @@ class ApiService {
     required int startFrame,
     required int endFrame,
     required String text,
-  }) {
-    return _makeRequest(
-      request: () => _client.post(
-        Uri.parse('$_baseUrl/meme'),
-        headers: _headers,
-        body: jsonEncode({
-          'mediaId': mediaId,
-          'startFrame': startFrame,
-          'endFrame': endFrame,
-          'text': text,
-        }),
-      ),
-      handleResponse: (json) {
-        return Right(MemeResponse.fromJson(json));
-      },
-    );
+    required void Function(double progress) onProgress,
+  }) async {
+    final uri = Uri.parse('$_baseUrl/meme');
+    final request = http.Request('POST', uri)
+      ..headers.addAll(_headers)
+      ..body = jsonEncode({
+        'mediaId': mediaId,
+        'startFrame': startFrame,
+        'endFrame': endFrame,
+        'text': text,
+      });
+
+    try {
+      final response = await _client.send(request);
+      if (response.statusCode != 200) {
+        return Left('Server error');
+      }
+
+      final completer = Completer<Either<String, MemeResponse>>();
+      final stream = response.stream
+          .transform(utf8.decoder)
+          .transform(const LineSplitter());
+
+      await for (final line in stream) {
+        if (line.startsWith('data:')) {
+          final jsonPayload = jsonDecode(line.substring(5).trim());
+          final type = jsonPayload['type'];
+          if (type == 'progress') {
+            final progress = (jsonPayload['progress'] ?? 0).toDouble();
+            onProgress(progress);
+          } else if (type == 'complete') {
+            completer.complete(Right(MemeResponse.fromJson(jsonPayload)));
+            break;
+          } else if (type == 'error') {
+            completer.complete(
+              Left(jsonPayload['message'] ?? 'Error occurred'),
+            );
+            break;
+          }
+        }
+      }
+
+      return completer.future;
+    } catch (e, s) {
+      debugPrint(e.toString());
+      debugPrint(s.toString());
+      return Left('Something went wrong');
+    }
   }
 
   Future<Either<String, T>> _makeRequest<T>({

@@ -36,6 +36,7 @@ class _CreatePageState extends ConsumerState<CreatePage> {
   );
   bool _isFetchingAfter = false;
   bool _isFetchingBefore = false;
+  final _uploadProgressNotifier = ValueNotifier<double>(0);
 
   Meme? _meme;
   bool _creating = false;
@@ -81,7 +82,24 @@ class _CreatePageState extends ConsumerState<CreatePage> {
                     Builder(
                       builder: (context) {
                         if (_creating) {
-                          return Center(child: CircularProgressIndicator());
+                          return Center(
+                            child: Row(
+                              children: [
+                                CircularProgressIndicator(),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: ValueListenableBuilder(
+                                    valueListenable: _uploadProgressNotifier,
+                                    builder: (context, value, child) {
+                                      return LinearProgressIndicator(
+                                        value: value,
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
                         }
                         if (meme == null) {
                           return Column(
@@ -196,6 +214,7 @@ class _CreatePageState extends ConsumerState<CreatePage> {
     final startIndex = _range.startFrame;
     final endIndex = _range.endFrame;
     final text = _textController.text;
+    _uploadProgressNotifier.value = 0;
 
     final api = ref.read(apiServiceProvider);
     setState(() => _creating = true);
@@ -204,6 +223,9 @@ class _CreatePageState extends ConsumerState<CreatePage> {
       startFrame: startIndex,
       endFrame: endIndex,
       text: text,
+      onProgress: (progress) {
+        _uploadProgressNotifier.value = progress;
+      },
     );
     if (!mounted) {
       return;

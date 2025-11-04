@@ -46,35 +46,56 @@ export function router(
   });
 
   router.post("/meme", async (req: Request, res: Response) => {
-    let body: PostMemeBody;
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.flushHeaders();
+
+    function send(data: any) {
+      res.write(`data: ${JSON.stringify(data)}\n\n`);
+    }
+
+    let body;
     try {
       body = postMemeBodySchema.parse(req.body);
-    } catch (e) {
-      return res.sendStatus(400);
+    } catch {
+      send({ type: "error", message: "Invalid request body" });
+      return res.end();
     }
+
+    send({ type: "progress", progress: 0.05 });
     const frames = await datastore.fetchFrameRange(
       body.mediaId,
       body.startFrame,
       body.endFrame
     );
 
+    send({ type: "progress", progress: 0.25 });
     let encodingResult: EncodingResult;
     try {
       encodingResult = await videoEncoder.encode(frames, 24, body.text);
     } catch (e) {
       console.error(e);
-      return res.sendStatus(500);
+      send({ type: "error", message: "Encoding failed" });
+      return res.end();
     }
 
+    send({ type: "progress", progress: 0.8 });
     const key = storage.generateMemeKey(shortUUID.generate());
     try {
       await storage.upload(key, encodingResult.data, encodingResult.mimeType);
-    } catch (e) {
-      return res.sendStatus(500);
+    } catch {
+      send({ type: "error", message: "Upload failed" });
+      return res.end();
     }
 
+    send({ type: "progress", progress: 1.0 });
     const url = storage.urlForKey(key);
-    return res.json({ data: { url: url, isVideo: encodingResult.isVideo } });
+    send({
+      type: "complete",
+      data: { url: url, isVideo: encodingResult.isVideo },
+    });
+    res.end();
   });
 
   return router;
