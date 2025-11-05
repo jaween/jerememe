@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:app/services/models/frame.dart';
 import 'package:flutter/material.dart';
+import 'package:shimmer_animation/shimmer_animation.dart';
 
 class MemePreview extends StatefulWidget {
   final List<Frame> frames;
@@ -70,67 +71,69 @@ class _MemePreviewState extends State<MemePreview> {
           if (widget.frames.isEmpty) {
             return const SizedBox.shrink();
           }
-          if (_loading) {
-            return Center(child: CircularProgressIndicator());
-          }
-          return MouseRegion(
-            cursor: SystemMouseCursors.text,
-            child: GestureDetector(
-              onTap: _textFieldFocusNode.requestFocus,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Image.network(
-                    widget.frames[_currentFrame].image,
-                    fit: BoxFit.contain,
-                  ),
-                  Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 16.0),
-                      child: IgnorePointer(
+          return Shimmer(
+            enabled: _loading,
+            child: MouseRegion(
+              cursor: SystemMouseCursors.text,
+              child: GestureDetector(
+                onTap: _textFieldFocusNode.requestFocus,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.network(
+                      widget.frames[_currentFrame].image,
+                      fit: BoxFit.contain,
+                    ),
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        child: IgnorePointer(
+                          child: TextFormField(
+                            controller: widget.textController,
+                            autofocus: widget.autofocus,
+                            minLines: 1,
+                            maxLines: 4,
+                            scrollPhysics: NeverScrollableScrollPhysics(),
+                            enabled: false,
+                            textAlign: TextAlign.center,
+                            decoration: InputDecoration(
+                              border: InputBorder.none,
+                            ),
+                            style: TextStyle(
+                              fontFamily: 'Impact',
+                              fontSize: 26,
+                              foreground: Paint()
+                                ..style = PaintingStyle.stroke
+                                ..strokeWidth = 4
+                                ..color = Colors.black,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 16.0),
                         child: TextFormField(
                           controller: widget.textController,
-                          autofocus: widget.autofocus,
+                          focusNode: _textFieldFocusNode,
                           minLines: 1,
                           maxLines: 4,
                           scrollPhysics: NeverScrollableScrollPhysics(),
-                          enabled: false,
                           textAlign: TextAlign.center,
                           decoration: InputDecoration(border: InputBorder.none),
                           style: TextStyle(
                             fontFamily: 'Impact',
                             fontSize: 26,
-                            foreground: Paint()
-                              ..style = PaintingStyle.stroke
-                              ..strokeWidth = 4
-                              ..color = Colors.black,
+                            color: Colors.white,
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 16.0),
-                      child: TextFormField(
-                        controller: widget.textController,
-                        focusNode: _textFieldFocusNode,
-                        minLines: 1,
-                        maxLines: 4,
-                        scrollPhysics: NeverScrollableScrollPhysics(),
-                        textAlign: TextAlign.center,
-                        decoration: InputDecoration(border: InputBorder.none),
-                        style: TextStyle(
-                          fontFamily: 'Impact',
-                          fontSize: 26,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           );

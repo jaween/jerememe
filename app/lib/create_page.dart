@@ -11,6 +11,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shimmer_animation/shimmer_animation.dart';
+
+const _itemHeight = 140.0;
 
 class CreatePage extends ConsumerStatefulWidget {
   final String mediaId;
@@ -87,7 +90,13 @@ class _CreatePageState extends ConsumerState<CreatePage> {
           SizedBox(
             width: 200,
             child: switch (_reducedFrames) {
-              AsyncLoading() => Center(child: CircularProgressIndicator()),
+              AsyncLoading() => ListView.builder(
+                itemBuilder: (context, index) {
+                  return _FrameContainer(
+                    child: Shimmer(child: Container(color: Colors.black)),
+                  );
+                },
+              ),
               AsyncError(:final error) => Center(child: Text(error.toString())),
               AsyncData(:final value) => _FrameRangePicker(
                 range: _range,
@@ -139,19 +148,30 @@ class _CreatePageState extends ConsumerState<CreatePage> {
                           return Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              switch (_frames) {
-                                AsyncLoading() => Center(
-                                  child: CircularProgressIndicator(),
+                              SizedBox(
+                                width: 500,
+                                height: 400,
+                                child: Shimmer(
+                                  enabled: _frames is AsyncLoading,
+                                  child: Builder(
+                                    builder: (context) {
+                                      return switch (_frames) {
+                                        AsyncLoading() => SizedBox.shrink(),
+                                        AsyncError(:final error) => Center(
+                                          child: Text(error.toString()),
+                                        ),
+                                        AsyncData(:final value) => MemePreview(
+                                          key: ValueKey(_range.hashCode),
+                                          textController: _textController,
+                                          frames: value
+                                              .selectedFrames(_range)
+                                              .toList(),
+                                        ),
+                                      };
+                                    },
+                                  ),
                                 ),
-                                AsyncError(:final error) => Center(
-                                  child: Text(error.toString()),
-                                ),
-                                AsyncData(:final value) => MemePreview(
-                                  key: ValueKey(_range.hashCode),
-                                  textController: _textController,
-                                  frames: value.selectedFrames(_range).toList(),
-                                ),
-                              },
+                              ),
                               Align(
                                 alignment: Alignment.centerLeft,
                                 child: ValueListenableBuilder(
@@ -279,8 +299,6 @@ class _FrameRangePickerState extends State<_FrameRangePicker> {
   bool _justSetStart = false;
   bool _initialJumpDone = false;
 
-  static const _itemHeight = 140.0;
-
   @override
   void initState() {
     super.initState();
@@ -357,12 +375,18 @@ class _FrameRangePickerState extends State<_FrameRangePicker> {
                 setState(() => _justSetStart = false);
               }
             },
-            child: Container(
-              width: 180,
-              height: _itemHeight,
-              padding: const EdgeInsets.all(4.0),
-              color: selected ? ColorScheme.of(context).primary : null,
-              child: Image.network(frame.image),
+            child: _FrameContainer(
+              selected: selected,
+              child: Image.network(
+                frame.image,
+                loadingBuilder: (context, child, loadingProgress) {
+                  return Shimmer(
+                    enabled: loadingProgress != null,
+                    duration: Duration(seconds: 1),
+                    child: child,
+                  );
+                },
+              ),
             ),
           );
         },
@@ -391,6 +415,24 @@ class _FrameRangePickerState extends State<_FrameRangePicker> {
         position.userScrollDirection == ScrollDirection.reverse) {
       widget.onFetchEnd();
     }
+  }
+}
+
+class _FrameContainer extends StatelessWidget {
+  final bool selected;
+  final Widget? child;
+
+  const _FrameContainer({super.key, this.selected = false, this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 180,
+      height: _itemHeight,
+      padding: const EdgeInsets.all(4.0),
+      color: selected ? ColorScheme.of(context).primary : null,
+      child: SizedBox.expand(child: child),
+    );
   }
 }
 

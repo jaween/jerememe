@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shimmer_animation/shimmer_animation.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -71,12 +72,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                   builder: (context) {
                     if (results == null && !_isFetching) {
                       return SizedBox.shrink();
-                    } else if (results == null && _isFetching) {
-                      return Center(child: CircularProgressIndicator());
                     } else if (results != null && results.isEmpty) {
                       return Center(child: Text('No results'));
-                    } else if (results == null) {
-                      return Center(child: Text('Something went wrong'));
                     }
                     return GridView.builder(
                       controller: _scrollController,
@@ -87,8 +84,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                         crossAxisSpacing: 8,
                         childAspectRatio: 11 / 10,
                       ),
-                      itemCount: results.length,
+                      itemCount: results?.length ?? 16,
                       itemBuilder: (context, index) {
+                        if (results == null) {
+                          return _SearchResultCardBorder(
+                            child: Shimmer(child: SizedBox.expand()),
+                          );
+                        }
                         final result = results[index];
                         return InkWell(
                           key: ValueKey(
@@ -127,7 +129,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       _offset = 0;
       _totalResults = 0;
       _submittedQuery = query;
-      _results?.clear();
+      _results = null;
     });
     _fetchPage(query: query, offset: 0);
   }
@@ -179,21 +181,24 @@ class SearchResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.all(Radius.circular(8)),
-        color: Colors.black54,
-      ),
+    return _SearchResultCardBorder(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Image.network(result.image),
+          Image.network(
+            result.image,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) {
+                return child;
+              }
+              return Shimmer(child: Container(color: Colors.grey.shade300));
+            },
+          ),
           SizedBox(height: 8),
           SizedBox(
             height: 48,
             child: Text(
-              '${result.startFrame}: ${result.text}',
+              result.text,
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -201,6 +206,24 @@ class SearchResultCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _SearchResultCardBorder extends StatelessWidget {
+  final Widget? child;
+
+  const _SearchResultCardBorder({super.key, this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.all(Radius.circular(8)),
+        color: Colors.black54,
+      ),
+      child: child,
     );
   }
 }
