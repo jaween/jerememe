@@ -133,3 +133,31 @@ abstract class Frames with _$Frames {
 
   bool get isFetching => isFetchingStart || isFetchingEnd;
 }
+
+@riverpod
+AsyncValue<Frames> reducedFrames(Ref ref, String mediaId, int baseFrameIndex) {
+  final value = ref.watch(framesRepositoryProvider(mediaId, baseFrameIndex));
+  switch (value) {
+    case AsyncLoading() || AsyncError():
+      return value;
+    case AsyncData(:final value):
+      final frames = value.frames;
+      final index = frames.indexWhere(((e) => e.index == baseFrameIndex));
+      final framesBefore = frames.sublist(0, index).reversed.toList();
+      final framesAfter = frames.sublist(index + 1);
+      final sublistBefore = [];
+      final sublistAfter = [];
+      const skip = 6;
+      for (int i = skip; i < framesBefore.length; i += skip) {
+        sublistBefore.add(framesBefore[i]);
+      }
+      for (int i = skip; i < framesAfter.length; i += skip) {
+        sublistAfter.add(framesAfter[i]);
+      }
+      return AsyncData(
+        value.copyWith(
+          frames: [...sublistBefore.reversed, frames[index], ...sublistAfter],
+        ),
+      );
+  }
+}

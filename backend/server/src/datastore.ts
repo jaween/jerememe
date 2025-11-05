@@ -83,7 +83,7 @@ export class Datastore {
     mediaId: string,
     index: number,
     direction?: "before" | "after",
-    count: number = 10
+    count: number = 20
   ): Promise<Frame[]> {
     const maxFrames = await this.durationFramesOfMedia(mediaId);
     let start: number;
@@ -100,8 +100,8 @@ export class Datastore {
       start = Math.min(index + 1, maxFrames);
       end = index + count;
     } else {
-      start = Math.max(index - 10, 0);
-      end = Math.min(index + 10, maxFrames);
+      start = Math.max(index - count, 0);
+      end = Math.min(index + count, maxFrames);
     }
 
     const results: Frame[] = [];

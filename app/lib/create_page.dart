@@ -29,6 +29,7 @@ class CreatePage extends ConsumerStatefulWidget {
 class _CreatePageState extends ConsumerState<CreatePage> {
   final _textController = TextEditingController();
   AsyncValue<Frames> _frames = AsyncLoading();
+  AsyncValue<Frames> _reducedFrames = AsyncLoading();
 
   late final _provider = framesRepositoryProvider(
     widget.mediaId,
@@ -52,12 +53,22 @@ class _CreatePageState extends ConsumerState<CreatePage> {
         return;
       }
       setState(() => _frames = next);
-      if (_textController.text.isEmpty) {
-        _textController.text = _createCaption(
-          next.requireValue.selectedFrames(_range),
-        );
-      }
     });
+    ref.listenManual(
+      reducedFramesProvider(widget.mediaId, widget.frameIndex),
+      fireImmediately: true,
+      (previous, next) {
+        if (!next.hasValue) {
+          return;
+        }
+        setState(() => _reducedFrames = next);
+        if (_textController.text.isEmpty) {
+          _textController.text = _createCaption(
+            next.requireValue.selectedFrames(_range),
+          );
+        }
+      },
+    );
   }
 
   @override
@@ -75,7 +86,7 @@ class _CreatePageState extends ConsumerState<CreatePage> {
         children: [
           SizedBox(
             width: 200,
-            child: switch (_frames) {
+            child: switch (_reducedFrames) {
               AsyncLoading() => Center(child: CircularProgressIndicator()),
               AsyncError(:final error) => Center(child: Text(error.toString())),
               AsyncData(:final value) => _FrameRangePicker(
