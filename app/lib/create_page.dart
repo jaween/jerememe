@@ -3,14 +3,12 @@ import 'dart:math';
 import 'package:app/repositories/frames_repository.dart';
 import 'package:app/services/api_service.dart';
 import 'package:app/services/models/frame.dart';
-import 'package:app/services/models/meme.dart';
 import 'package:app/util.dart';
-import 'package:app/widgets/meme_display.dart';
 import 'package:app/widgets/meme_preview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shimmer_animation/shimmer_animation.dart';
 
 const _itemHeight = 140.0;
@@ -45,7 +43,6 @@ class _CreatePageState extends ConsumerState<CreatePage> {
   );
 
   final _uploadProgressNotifier = ValueNotifier<double>(0);
-  Meme? _meme;
   bool _creating = false;
 
   @override
@@ -82,7 +79,6 @@ class _CreatePageState extends ConsumerState<CreatePage> {
 
   @override
   Widget build(BuildContext context) {
-    final meme = _meme;
     return Scaffold(
       appBar: AppBar(scrolledUnderElevation: 0),
       body: Row(
@@ -122,90 +118,59 @@ class _CreatePageState extends ConsumerState<CreatePage> {
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Builder(
-                      builder: (context) {
-                        if (_creating) {
-                          return Center(
-                            child: Row(
-                              children: [
-                                CircularProgressIndicator(),
-                                SizedBox(width: 8),
-                                Expanded(
-                                  child: ValueListenableBuilder(
-                                    valueListenable: _uploadProgressNotifier,
-                                    builder: (context, value, child) {
-                                      return LinearProgressIndicator(
-                                        value: value,
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }
-                        if (meme == null) {
-                          return Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SizedBox(
-                                width: 500,
-                                height: 400,
-                                child: Shimmer(
-                                  enabled: _frames is AsyncLoading,
-                                  child: Builder(
-                                    builder: (context) {
-                                      return switch (_frames) {
-                                        AsyncLoading() => SizedBox.shrink(),
-                                        AsyncError(:final error) => Center(
-                                          child: Text(error.toString()),
-                                        ),
-                                        AsyncData(:final value) => MemePreview(
-                                          key: ValueKey(_range.hashCode),
-                                          textController: _textController,
-                                          frames: value
-                                              .selectedFrames(_range)
-                                              .toList(),
-                                        ),
-                                      };
-                                    },
-                                  ),
-                                ),
+                    SizedBox(
+                      width: 500,
+                      height: 400,
+                      child: Shimmer(
+                        enabled: _frames is AsyncLoading,
+                        child: Builder(
+                          builder: (context) {
+                            return switch (_frames) {
+                              AsyncLoading() => SizedBox.shrink(),
+                              AsyncError(:final error) => Center(
+                                child: Text(error.toString()),
                               ),
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: ValueListenableBuilder(
-                                  valueListenable: _textController,
-                                  builder: (context, value, child) {
-                                    return TextButton.icon(
-                                      onPressed: value.text.isEmpty
-                                          ? null
-                                          : _textController.clear,
-                                      label: Text('Remove text'),
-                                      icon: Icon(Icons.clear),
-                                    );
-                                  },
-                                ),
+                              AsyncData(:final value) => MemePreview(
+                                key: ValueKey(_range.hashCode),
+                                textController: _textController,
+                                frames: value.selectedFrames(_range).toList(),
                               ),
-                            ],
-                          );
-                        }
-                        return MemeDisplay(meme: meme);
-                      },
-                    ),
-                    if (meme != null) ...[
-                      SizedBox(height: 16),
-                      OutlinedButton.icon(
-                        onPressed: () => _copy(meme.url),
-                        label: Text(meme.url.substring(0, 20)),
-                        icon: Icon(Icons.copy),
+                            };
+                          },
+                        ),
                       ),
-                    ],
+                    ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: ValueListenableBuilder(
+                        valueListenable: _textController,
+                        builder: (context, value, child) {
+                          return TextButton.icon(
+                            onPressed: value.text.isEmpty
+                                ? null
+                                : _textController.clear,
+                            label: Text('Remove text'),
+                            icon: Icon(Icons.clear),
+                          );
+                        },
+                      ),
+                    ),
                     SizedBox(height: 32),
-                    FilledButton.icon(
-                      onPressed: _creating ? null : _postMeme,
-                      label: Text('Generate'),
-                      icon: Icon(Icons.done),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: !_creating
+                          ? FilledButton.icon(
+                              onPressed: _creating ? null : _postMeme,
+                              label: Text('Generate'),
+                              icon: Icon(Icons.done),
+                            )
+                          : ValueListenableBuilder(
+                              valueListenable: _uploadProgressNotifier,
+                              builder: (context, value, child) {
+                                return LinearProgressIndicator(value: value);
+                              },
+                            ),
                     ),
                   ],
                 ),
@@ -255,18 +220,8 @@ class _CreatePageState extends ConsumerState<CreatePage> {
       case Left(:final value):
         showError(context: context, message: value);
       case Right(:final value):
-        setState(() => _meme = value.data);
+        context.pushNamed('result', extra: value.data);
     }
-  }
-
-  void _copy(String url) {
-    Clipboard.setData(ClipboardData(text: url));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Copied To Clipboard'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
   }
 }
 

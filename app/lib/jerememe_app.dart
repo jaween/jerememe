@@ -1,6 +1,8 @@
 import 'package:app/create_page.dart';
 import 'package:app/error_page.dart';
 import 'package:app/home_page.dart';
+import 'package:app/result_page.dart';
+import 'package:app/services/models/meme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -101,6 +103,19 @@ class _RouterBuilderState extends State<_RouterBuilder> {
                   child: CreatePage(mediaId: mediaId, frameIndex: frame),
                 );
               },
+              routes: [
+                GoRoute(
+                  path: 'meme',
+                  name: 'result',
+                  builder: (context, state) {
+                    final meme = state.extra as Meme?;
+                    if (meme == null) {
+                      throw 'Missing meme';
+                    }
+                    return SelectionArea(child: ResultPage(meme: meme));
+                  },
+                ),
+              ],
             ),
           ],
         ),
