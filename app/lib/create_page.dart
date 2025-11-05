@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:app/repositories/frames_repository.dart';
 import 'package:app/services/api_service.dart';
 import 'package:app/services/models/frame.dart';
 import 'package:app/services/models/meme.dart';
@@ -26,25 +27,37 @@ class CreatePage extends ConsumerStatefulWidget {
 }
 
 class _CreatePageState extends ConsumerState<CreatePage> {
-  final _frames = <Frame>[];
-  int? _maxIndex;
   final _textController = TextEditingController();
+  AsyncValue<Frames> _frames = AsyncLoading();
+
+  late final _provider = framesRepositoryProvider(
+    widget.mediaId,
+    widget.frameIndex,
+  );
 
   late _FrameRange _range = _FrameRange(
     startFrame: widget.frameIndex,
     endFrame: widget.frameIndex,
   );
-  bool _isFetchingAfter = false;
-  bool _isFetchingBefore = false;
-  final _uploadProgressNotifier = ValueNotifier<double>(0);
 
+  final _uploadProgressNotifier = ValueNotifier<double>(0);
   Meme? _meme;
   bool _creating = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchFrames();
+    ref.listenManual(_provider, fireImmediately: true, (previous, next) {
+      if (!next.hasValue) {
+        return;
+      }
+      setState(() => _frames = next);
+      if (_textController.text.isEmpty) {
+        _textController.text = _createCaption(
+          next.requireValue.selectedFrames(_range),
+        );
+      }
+    });
   }
 
   @override
@@ -62,17 +75,24 @@ class _CreatePageState extends ConsumerState<CreatePage> {
         children: [
           SizedBox(
             width: 200,
-            child: _FrameRangePicker(
-              range: _range,
-              onRangeChanged: (range) {
-                setState(() => _range = range);
-                _textController.text = _createCaption();
-              },
-              isFetchingBefore: _isFetchingBefore,
-              isFetchingAfter: _isFetchingAfter,
-              frames: List.of(_frames),
-              onFetchFrames: _fetchFrames,
-            ),
+            child: switch (_frames) {
+              AsyncLoading() => Center(child: CircularProgressIndicator()),
+              AsyncError(:final error) => Center(child: Text(error.toString())),
+              AsyncData(:final value) => _FrameRangePicker(
+                range: _range,
+                onRangeChanged: (range) {
+                  setState(() => _range = range);
+                  _textController.text = _createCaption(
+                    value.selectedFrames(range),
+                  );
+                },
+                frames: value.frames,
+                isFetchingStart: value.isFetchingStart,
+                isFetchingEnd: value.isFetchingEnd,
+                onFetchStart: ref.read(_provider.notifier).fetchStart,
+                onFetchEnd: ref.read(_provider.notifier).fetchEnd,
+              ),
+            },
           ),
           Expanded(
             child: Center(
@@ -108,17 +128,19 @@ class _CreatePageState extends ConsumerState<CreatePage> {
                           return Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              MemePreview(
-                                key: ValueKey(_range.hashCode),
-                                textController: _textController,
-                                frames: _frames
-                                    .where(
-                                      (e) =>
-                                          e.index >= _range.startFrame &&
-                                          e.index <= _range.endFrame,
-                                    )
-                                    .toList(),
-                              ),
+                              switch (_frames) {
+                                AsyncLoading() => Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                                AsyncError(:final error) => Center(
+                                  child: Text(error.toString()),
+                                ),
+                                AsyncData(:final value) => MemePreview(
+                                  key: ValueKey(_range.hashCode),
+                                  textController: _textController,
+                                  frames: value.selectedFrames(_range).toList(),
+                                ),
+                              },
                               Align(
                                 alignment: Alignment.centerLeft,
                                 child: ValueListenableBuilder(
@@ -164,67 +186,10 @@ class _CreatePageState extends ConsumerState<CreatePage> {
     );
   }
 
-  void _fetchFrames({FramesDirection? direction, int? frameIndex}) async {
-    final maxIndex = _maxIndex;
-    if (frameIndex != null) {
-      if (frameIndex <= 0 || (maxIndex != null && frameIndex >= maxIndex)) {
-        return;
-      }
-    }
-    final api = ref.read(apiServiceProvider);
-    switch (direction) {
-      case FramesDirection.before:
-        setState(() => _isFetchingBefore = true);
-      case FramesDirection.after:
-        setState(() => _isFetchingAfter = true);
-      case null:
-        setState(() {
-          _isFetchingBefore = true;
-          _isFetchingAfter = true;
-        });
-    }
-    final result = await api.getFrames(
-      mediaId: widget.mediaId,
-      index: frameIndex ?? widget.frameIndex,
-      direction: direction,
-    );
-    if (!mounted) {
-      return;
-    }
-    setState(() {
-      _isFetchingBefore = false;
-      _isFetchingAfter = false;
-    });
-    switch (result) {
-      case Left(:final value):
-        showError(context: context, message: value);
-      case Right(:final value):
-        final newFrames = switch (direction) {
-          FramesDirection.before => List.of(_frames)..insertAll(0, value.data),
-          FramesDirection.after => List.of(_frames)..addAll(value.data),
-          null => value.data,
-        };
-        setState(() {
-          _maxIndex ??= value.meta.maxIndex;
-          _frames
-            ..clear()
-            ..addAll(newFrames);
-        });
-        if (_textController.text.isEmpty) {
-          _textController.text = _createCaption();
-        }
-    }
-  }
-
-  String _createCaption() {
-    final selectedFrames = _frames
-        .where(
-          (e) => e.index >= _range.startFrame && e.index <= _range.endFrame,
-        )
-        .toList();
+  String _createCaption(Iterable<Frame> frames) {
     final usedLines = <int>{};
     final subtitles = <String>[];
-    for (final frame in selectedFrames) {
+    for (final frame in frames) {
       final subtitle = frame.subtitle;
       if (subtitle != null && !usedLines.contains(subtitle.lineNumber)) {
         usedLines.add(subtitle.lineNumber);
@@ -276,21 +241,22 @@ class _CreatePageState extends ConsumerState<CreatePage> {
 
 class _FrameRangePicker extends StatefulWidget {
   final _FrameRange range;
-  final bool isFetchingBefore;
-  final bool isFetchingAfter;
   final void Function(_FrameRange range) onRangeChanged;
   final List<Frame> frames;
-  final void Function({FramesDirection? direction, int? frameIndex})
-  onFetchFrames;
+  final bool isFetchingStart;
+  final bool isFetchingEnd;
+  final VoidCallback onFetchStart;
+  final VoidCallback onFetchEnd;
 
   const _FrameRangePicker({
     super.key,
     required this.range,
     required this.onRangeChanged,
-    required this.isFetchingBefore,
-    required this.isFetchingAfter,
     required this.frames,
-    required this.onFetchFrames,
+    required this.isFetchingStart,
+    required this.isFetchingEnd,
+    required this.onFetchStart,
+    required this.onFetchEnd,
   });
 
   @override
@@ -308,20 +274,12 @@ class _FrameRangePickerState extends State<_FrameRangePicker> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScrollUpdate);
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
+    _performInitialJumpNextFrame();
   }
 
   @override
   void didUpdateWidget(covariant _FrameRangePicker oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.frames.isNotEmpty && !_initialJumpDone) {
-      _performInitialJumpNextFrame();
-    }
     final oldFrames = oldWidget.frames;
     final newFrames = widget.frames;
     if (newFrames.length > oldFrames.length && oldFrames.isNotEmpty) {
@@ -350,6 +308,12 @@ class _FrameRangePickerState extends State<_FrameRangePicker> {
       final current = _scrollController.position.pixels;
       _scrollController.jumpTo(current + _itemHeight * newFrameCount);
     }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -402,29 +366,19 @@ class _FrameRangePickerState extends State<_FrameRangePicker> {
 
     const fetchTrigger = 200;
 
-    // After
+    // Start
     final position = _scrollController.position;
-    if (position.pixels >= position.maxScrollExtent - fetchTrigger &&
-        !widget.isFetchingAfter &&
-        position.userScrollDirection == ScrollDirection.reverse) {
-      final lastFrame = widget.frames.isNotEmpty ? widget.frames.last.index : 0;
-      widget.onFetchFrames(
-        direction: FramesDirection.after,
-        frameIndex: lastFrame,
-      );
+    if (!widget.isFetchingStart &&
+        position.pixels <= position.minScrollExtent + fetchTrigger &&
+        position.userScrollDirection == ScrollDirection.forward) {
+      widget.onFetchStart();
     }
 
-    // Before
-    if (position.pixels <= position.minScrollExtent + fetchTrigger &&
-        !widget.isFetchingBefore &&
-        position.userScrollDirection == ScrollDirection.forward) {
-      final firstFrame = widget.frames.isNotEmpty
-          ? widget.frames.first.index
-          : 0;
-      widget.onFetchFrames(
-        direction: FramesDirection.before,
-        frameIndex: firstFrame,
-      );
+    // End
+    if (!widget.isFetchingEnd &&
+        position.pixels >= position.maxScrollExtent - fetchTrigger &&
+        position.userScrollDirection == ScrollDirection.reverse) {
+      widget.onFetchEnd();
     }
   }
 }
@@ -434,4 +388,12 @@ class _FrameRange {
   final int endFrame;
 
   _FrameRange({required this.startFrame, required this.endFrame});
+}
+
+extension on Frames {
+  Iterable<Frame> selectedFrames(_FrameRange range) {
+    return frames.where(
+      (e) => e.index >= range.startFrame && e.index <= range.endFrame,
+    );
+  }
 }
