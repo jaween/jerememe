@@ -83,7 +83,7 @@ export class Datastore {
     mediaId: string,
     index: number,
     direction?: "before" | "after",
-    count: number = 20
+    count: number = 64
   ): Promise<Frame[]> {
     const maxFrames = await this.durationFramesOfMedia(mediaId);
     let start: number;

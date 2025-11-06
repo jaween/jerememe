@@ -147,7 +147,7 @@ AsyncValue<Frames> reducedFrames(Ref ref, String mediaId, int baseFrameIndex) {
       final framesAfter = frames.sublist(index + 1);
       final sublistBefore = [];
       final sublistAfter = [];
-      const skip = 6;
+      const skip = 12;
       for (int i = skip; i < framesBefore.length; i += skip) {
         sublistBefore.add(framesBefore[i]);
       }
