@@ -13,7 +13,7 @@ part 'api_service.g.dart';
 @riverpod
 ApiService apiService(Ref ref) => throw 'Uninitialized provider';
 
-const _kTimeout = Duration(seconds: 10);
+const _kTimeout = Duration(seconds: 15);
 
 class ApiService {
   final String _baseUrl;
