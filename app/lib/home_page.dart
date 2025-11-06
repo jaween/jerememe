@@ -1,6 +1,5 @@
-import 'package:app/services/api_service.dart';
+import 'package:app/repositories/search_repository.dart';
 import 'package:app/services/models/search.dart';
-import 'package:app/util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,17 +15,13 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   final _searchController = TextEditingController();
-  List<SearchResult>? _results;
   final _scrollController = ScrollController();
-
-  String _submittedQuery = '';
-  int _totalResults = 0;
-  int _offset = 0;
-  bool _isFetching = false;
 
   @override
   void initState() {
     super.initState();
+    // Keep alive provider
+    ref.listenManual(searchQueryProvider, fireImmediately: true, (_, _) {});
     _scrollController.addListener(_onScrollUpdate);
   }
 
@@ -39,7 +34,6 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final results = _results;
     return Scaffold(
       body: Center(
         child: Column(
@@ -54,11 +48,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                   SizedBox(height: 32),
                   TextFormField(
                     controller: _searchController,
-                    onFieldSubmitted: (_) => _onSearchSubmitted(),
+                    onChanged: ref.read(searchQueryProvider.notifier).setQuery,
                   ),
                   SizedBox(height: 32),
                   FilledButton(
-                    onPressed: _onSearchSubmitted,
+                    onPressed: () => ref
+                        .read(searchQueryProvider.notifier)
+                        .setQuery(_searchController.text),
                     child: Text('Search'),
                   ),
                 ],
@@ -70,9 +66,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                 constraints: BoxConstraints(maxWidth: 1600),
                 child: Builder(
                   builder: (context) {
-                    if (results == null && !_isFetching) {
+                    final results = ref.watch(searchRepositoryProvider).value;
+                    if (results == null) {
                       return SizedBox.shrink();
-                    } else if (results != null && results.isEmpty) {
+                    }
+                    if (results.results.isEmpty && !results.searching) {
                       return Center(child: Text('No results'));
                     }
                     return GridView.builder(
@@ -84,14 +82,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                         crossAxisSpacing: 8,
                         childAspectRatio: 11 / 10,
                       ),
-                      itemCount: results?.length ?? 16,
+                      itemCount: results.searching && results.results.isEmpty
+                          ? 10
+                          : results.results.length,
                       itemBuilder: (context, index) {
-                        if (results == null) {
+                        if (results.results.isEmpty) {
                           return _SearchResultCardBorder(
                             child: Shimmer(child: SizedBox.expand()),
                           );
                         }
-                        final result = results[index];
+                        final result = results.results[index];
                         return InkWell(
                           key: ValueKey(
                             'result_${result.mediaId}_${result.startFrame}',
@@ -119,42 +119,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  void _onSearchSubmitted() async {
-    final query = _searchController.text.trim();
-    if (query.isEmpty) {
-      return;
-    }
-
-    setState(() {
-      _offset = 0;
-      _totalResults = 0;
-      _submittedQuery = query;
-      _results = null;
-    });
-    _fetchPage(query: query, offset: 0);
-  }
-
-  Future<void> _fetchPage({required String query, required int offset}) async {
-    final api = ref.read(apiServiceProvider);
-    setState(() => _isFetching = true);
-    final result = await api.getSearch(query: query, offset: offset);
-    if (!mounted) {
-      return;
-    }
-    setState(() => _isFetching = false);
-    switch (result) {
-      case Left(:final value):
-        showError(context: context, message: value);
-        return;
-      case Right(:final value):
-        setState(() {
-          _totalResults = value.meta.totalResults;
-          _offset += value.data.length;
-          _results = (_results ?? [])..addAll(value.data);
-        });
-    }
-  }
-
   void _onScrollUpdate() async {
     if (!_scrollController.hasClients) {
       return;
@@ -164,12 +128,9 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     // After
     final position = _scrollController.position;
-    if (!_isFetching &&
-        position.pixels >= position.maxScrollExtent - fetchTrigger &&
-        !_isFetching &&
-        position.userScrollDirection == ScrollDirection.reverse &&
-        _offset < _totalResults) {
-      _fetchPage(query: _submittedQuery, offset: _offset);
+    if (position.pixels >= position.maxScrollExtent - fetchTrigger &&
+        position.userScrollDirection == ScrollDirection.reverse) {
+      ref.read(searchRepositoryProvider.notifier).fetchNextPage();
     }
   }
 }
