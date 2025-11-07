@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:app/services/models/frame.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:shimmer_animation/shimmer_animation.dart';
 
 class MemePreview extends StatefulWidget {
@@ -21,42 +22,43 @@ class MemePreview extends StatefulWidget {
 }
 
 class _MemePreviewState extends State<MemePreview> {
-  int _currentFrame = 0;
-  Timer? _timer;
   final _textFieldFocusNode = FocusNode();
   bool _loading = true;
+  bool _hasCached = false;
 
   @override
   void initState() {
     super.initState();
-    if (widget.frames.isNotEmpty) {
-      _startAnimation();
-    }
-    _cacheFrames();
+    _textFieldFocusNode.requestFocus();
   }
 
-  void _startAnimation() {
-    const frameDuration = Duration(milliseconds: 1000 ~/ 24);
-    _timer = Timer.periodic(frameDuration, (timer) {
-      setState(() {
-        _currentFrame = (_currentFrame + 1) % widget.frames.length;
-      });
-    });
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_hasCached) {
+      _hasCached = true;
+      _cacheFrames();
+    }
   }
 
   void _cacheFrames() async {
-    await WidgetsBinding.instance.endOfFrame;
     await Future.wait(
       widget.frames.map((e) => precacheImage(NetworkImage(e.image), context)),
     );
-    if (mounted) {
-      setState(() => _loading = false);
+    if (!mounted) {
+      return;
     }
+    setState(() => _loading = false);
+
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) {
+      return;
+    }
+    _textFieldFocusNode.requestFocus();
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
     _textFieldFocusNode.dispose();
     super.dispose();
   }
@@ -80,33 +82,31 @@ class _MemePreviewState extends State<MemePreview> {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    Image.network(
-                      widget.frames[_currentFrame].image,
-                      fit: BoxFit.contain,
-                    ),
+                    _Playback(frames: widget.frames),
                     Align(
                       alignment: Alignment.bottomCenter,
                       child: Padding(
                         padding: const EdgeInsets.only(bottom: 16.0),
-                        child: IgnorePointer(
-                          child: TextFormField(
-                            controller: widget.textController,
-                            autofocus: widget.autofocus,
-                            minLines: 1,
-                            maxLines: 4,
-                            scrollPhysics: NeverScrollableScrollPhysics(),
-                            enabled: false,
-                            textAlign: TextAlign.center,
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                            ),
-                            style: TextStyle(
-                              fontFamily: 'Impact',
-                              fontSize: 26,
-                              foreground: Paint()
-                                ..style = PaintingStyle.stroke
-                                ..strokeWidth = 4
-                                ..color = Colors.black,
+                        child: ExcludeFocus(
+                          child: IgnorePointer(
+                            child: TextFormField(
+                              controller: widget.textController,
+                              minLines: 1,
+                              maxLines: 4,
+                              scrollPhysics: NeverScrollableScrollPhysics(),
+                              enabled: false,
+                              textAlign: TextAlign.center,
+                              decoration: InputDecoration(
+                                border: InputBorder.none,
+                              ),
+                              style: TextStyle(
+                                fontFamily: 'Impact',
+                                fontSize: 26,
+                                foreground: Paint()
+                                  ..style = PaintingStyle.stroke
+                                  ..strokeWidth = 4
+                                  ..color = Colors.black,
+                              ),
                             ),
                           ),
                         ),
@@ -140,5 +140,53 @@ class _MemePreviewState extends State<MemePreview> {
         },
       ),
     );
+  }
+}
+
+class _Playback extends StatefulWidget {
+  final List<Frame> frames;
+  const _Playback({super.key, required this.frames});
+
+  @override
+  State<_Playback> createState() => _PlaybackState();
+}
+
+class _PlaybackState extends State<_Playback>
+    with SingleTickerProviderStateMixin {
+  static const _fps = 24;
+  static const _frameDuration = Duration(milliseconds: 1000 ~/ _fps);
+
+  late final Ticker _ticker;
+  Duration _elapsed = Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = createTicker(_onTick);
+    if (widget.frames.isNotEmpty) {
+      _ticker.start();
+    }
+  }
+
+  void _onTick(Duration elapsed) {
+    setState(() => _elapsed = elapsed);
+  }
+
+  @override
+  void dispose() {
+    _ticker.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.frames.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    final frameCount = widget.frames.length;
+    final frameIndex =
+        ((_elapsed.inMilliseconds ~/ _frameDuration.inMilliseconds) %
+        frameCount);
+    return Image.network(widget.frames[frameIndex].image, fit: BoxFit.contain);
   }
 }

@@ -15,12 +15,12 @@ class SearchQuery extends _$SearchQuery {
   @override
   String build() {
     ref.onDispose(() => _debounceTimer?.cancel());
-    return state;
+    return '';
   }
 
   void setQuery(String text) async {
     _debounceTimer?.cancel();
-    _debounceTimer = Timer(Duration(milliseconds: 500), () {
+    _debounceTimer = Timer(Duration(milliseconds: 300), () {
       state = text.trim();
     });
   }

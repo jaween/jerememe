@@ -7,7 +7,17 @@ Future<void> showError({
   await showDialog(
     context: context,
     builder: (context) {
-      return AlertDialog(title: Text('Error'), content: Text(message));
+      return AlertDialog(
+        title: Text('Error'),
+        actionsAlignment: MainAxisAlignment.center,
+        content: Text(message),
+        actions: [
+          OutlinedButton(
+            onPressed: Navigator.of(context).pop,
+            child: Text('OK'),
+          ),
+        ],
+      );
     },
   );
 }

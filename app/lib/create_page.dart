@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:app/repositories/frames_repository.dart';
+import 'package:app/repositories/search_repository.dart';
 import 'package:app/services/api_service.dart';
 import 'package:app/services/models/frame.dart';
 import 'package:app/util.dart';
@@ -48,12 +49,16 @@ class _CreatePageState extends ConsumerState<CreatePage> {
   @override
   void initState() {
     super.initState();
+    // Keep alive provider
+    ref.listenManual(searchQueryProvider, fireImmediately: true, (_, _) {});
+
     ref.listenManual(_provider, fireImmediately: true, (previous, next) {
       if (!next.hasValue) {
         return;
       }
       setState(() => _frames = next);
     });
+
     ref.listenManual(
       reducedFramesProvider(widget.mediaId, widget.frameIndex),
       fireImmediately: true,
@@ -79,14 +84,15 @@ class _CreatePageState extends ConsumerState<CreatePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(scrolledUnderElevation: 0),
-      body: Row(
+    return Center(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           SizedBox(
-            width: 200,
+            width: 232,
             child: switch (_reducedFrames) {
               AsyncLoading() => ListView.builder(
+                padding: EdgeInsets.symmetric(horizontal: 16),
                 itemBuilder: (context, index) {
                   return _FrameContainer(
                     child: Shimmer(child: Container(color: Colors.black)),
@@ -110,73 +116,72 @@ class _CreatePageState extends ConsumerState<CreatePage> {
               ),
             },
           ),
-          Expanded(
-            child: Center(
-              child: Container(
-                constraints: BoxConstraints(maxWidth: 500),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: 500,
-                      height: 400,
-                      child: Shimmer(
-                        enabled: _frames is AsyncLoading,
-                        child: Builder(
-                          builder: (context) {
-                            return switch (_frames) {
-                              AsyncLoading() => SizedBox.shrink(),
-                              AsyncError(:final error) => Center(
-                                child: Text(error.toString()),
-                              ),
-                              AsyncData(:final value) => MemePreview(
-                                key: ValueKey(_range.hashCode),
-                                textController: _textController,
-                                frames: value.selectedFrames(_range).toList(),
-                              ),
-                            };
+          SizedBox(width: 96),
+          Container(
+            constraints: BoxConstraints(maxWidth: 500),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 500,
+                  height: 400,
+                  child: Shimmer(
+                    enabled: _frames is AsyncLoading,
+                    child: Builder(
+                      builder: (context) {
+                        return switch (_frames) {
+                          AsyncLoading() => SizedBox.shrink(),
+                          AsyncError(:final error) => Center(
+                            child: Text(error.toString()),
+                          ),
+                          AsyncData(:final value) => MemePreview(
+                            key: ValueKey(_range.hashCode),
+                            textController: _textController,
+                            frames: value.selectedFrames(_range).toList(),
+                          ),
+                        };
+                      },
+                    ),
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: ValueListenableBuilder(
+                    valueListenable: _textController,
+                    builder: (context, value, child) {
+                      return TextButton.icon(
+                        onPressed: value.text.isEmpty
+                            ? null
+                            : _textController.clear,
+                        label: Text('Remove text'),
+                        icon: Icon(Icons.clear),
+                      );
+                    },
+                  ),
+                ),
+                SizedBox(height: 64),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: !_creating
+                      ? FilledButton.icon(
+                          onPressed: _creating ? null : _postMeme,
+                          label: Text('Finish'),
+                          icon: Icon(Icons.done),
+                        )
+                      : ValueListenableBuilder(
+                          valueListenable: _uploadProgressNotifier,
+                          builder: (context, value, child) {
+                            return LinearProgressIndicator(value: value);
                           },
                         ),
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: ValueListenableBuilder(
-                        valueListenable: _textController,
-                        builder: (context, value, child) {
-                          return TextButton.icon(
-                            onPressed: value.text.isEmpty
-                                ? null
-                                : _textController.clear,
-                            label: Text('Remove text'),
-                            icon: Icon(Icons.clear),
-                          );
-                        },
-                      ),
-                    ),
-                    SizedBox(height: 32),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: !_creating
-                          ? FilledButton.icon(
-                              onPressed: _creating ? null : _postMeme,
-                              label: Text('Generate'),
-                              icon: Icon(Icons.done),
-                            )
-                          : ValueListenableBuilder(
-                              valueListenable: _uploadProgressNotifier,
-                              builder: (context, value, child) {
-                                return LinearProgressIndicator(value: value);
-                              },
-                            ),
-                    ),
-                  ],
                 ),
-              ),
+              ],
             ),
           ),
+          SizedBox(width: 96),
+          SizedBox(width: 232),
         ],
       ),
     );
@@ -306,6 +311,7 @@ class _FrameRangePickerState extends State<_FrameRangePicker> {
       opacity: _initialJumpDone ? 1.0 : 0.0,
       child: ListView.builder(
         controller: _scrollController,
+        padding: EdgeInsets.symmetric(horizontal: 16),
         itemCount: widget.frames.length,
         itemBuilder: (context, index) {
           final frame = widget.frames[index];
