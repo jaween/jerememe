@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:app/repositories/frames_repository.dart';
 import 'package:app/repositories/search_repository.dart';
 import 'package:app/services/api_service.dart';
@@ -337,6 +335,7 @@ class _FramesColumn extends StatelessWidget {
         padding: EdgeInsets.symmetric(horizontal: 16),
         itemBuilder: (context, index) {
           return _FrameContainer(
+            aspectRatio: 480 / 360,
             child: Shimmer(child: Container(color: Colors.black)),
           );
         },
@@ -344,7 +343,8 @@ class _FramesColumn extends StatelessWidget {
       AsyncError(:final error) => Center(child: Text(error.toString())),
       AsyncData(:final value) => _FrameRangePicker(
         range: range,
-        onRangeChanged: (range) => (range, value.selectedFrames(range)),
+        onRangeChanged: (range) =>
+            onRangeChanged(range, value.selectedFrames(range).toList()),
         frames: value.frames,
         isFetchingStart: value.isFetchingStart,
         isFetchingEnd: value.isFetchingEnd,
@@ -381,7 +381,6 @@ class _FrameRangePicker extends StatefulWidget {
 
 class _FrameRangePickerState extends State<_FrameRangePicker> {
   final _scrollController = ScrollController();
-  bool _justSetStart = false;
   bool _initialJumpDone = false;
 
   @override
@@ -443,35 +442,64 @@ class _FrameRangePickerState extends State<_FrameRangePicker> {
           final selected =
               frame.index >= widget.range.startFrame &&
               frame.index <= widget.range.endFrame;
-          return InkWell(
+          return Center(
             key: ValueKey(frame.index.toString()),
-            onTap: () {
-              if (!_justSetStart) {
-                widget.onRangeChanged(
-                  _FrameRange(startFrame: frame.index, endFrame: frame.index),
-                );
-                setState(() => _justSetStart = true);
-              } else {
-                widget.onRangeChanged(
-                  _FrameRange(
-                    startFrame: min(widget.range.startFrame, frame.index),
-                    endFrame: max(frame.index, widget.range.startFrame),
-                  ),
-                );
-                setState(() => _justSetStart = false);
-              }
-            },
-            child: _FrameContainer(
-              selected: selected,
-              child: Image.network(
-                frame.thumbnail.url,
-                loadingBuilder: (context, child, loadingProgress) {
-                  return Shimmer(
-                    enabled: loadingProgress != null,
-                    duration: Duration(seconds: 1),
-                    child: child,
-                  );
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: () {
+                  if (widget.range.startFrame == widget.range.endFrame &&
+                      frame.index == widget.range.startFrame) {
+                    return;
+                  }
+                  final closerToTop =
+                      (frame.index < widget.range.startFrame) ||
+                      ((frame.index - widget.range.startFrame).abs() <
+                          (frame.index - widget.range.endFrame).abs());
+                  if (frame.index == widget.range.startFrame) {
+                    widget.onRangeChanged(
+                      _FrameRange(
+                        startFrame: widget.frames[index + 1].index,
+                        endFrame: widget.range.endFrame,
+                      ),
+                    );
+                  } else if (frame.index == widget.range.endFrame) {
+                    widget.onRangeChanged(
+                      _FrameRange(
+                        startFrame: widget.range.startFrame,
+                        endFrame: widget.frames[index - 1].index,
+                      ),
+                    );
+                  } else if (closerToTop) {
+                    widget.onRangeChanged(
+                      _FrameRange(
+                        startFrame: frame.index,
+                        endFrame: widget.range.endFrame,
+                      ),
+                    );
+                  } else {
+                    widget.onRangeChanged(
+                      _FrameRange(
+                        startFrame: widget.range.startFrame,
+                        endFrame: frame.index,
+                      ),
+                    );
+                  }
                 },
+                child: _FrameContainer(
+                  selected: selected,
+                  aspectRatio: frame.thumbnail.aspectRatio,
+                  child: Image.network(
+                    frame.thumbnail.url,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      return Shimmer(
+                        enabled: loadingProgress != null,
+                        duration: Duration(seconds: 1),
+                        child: child,
+                      );
+                    },
+                  ),
+                ),
               ),
             ),
           );
@@ -506,14 +534,20 @@ class _FrameRangePickerState extends State<_FrameRangePicker> {
 
 class _FrameContainer extends StatelessWidget {
   final bool selected;
+  final double aspectRatio;
   final Widget? child;
 
-  const _FrameContainer({super.key, this.selected = false, this.child});
+  const _FrameContainer({
+    super.key,
+    this.selected = false,
+    required this.aspectRatio,
+    this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 180,
+      width: aspectRatio * _itemHeight,
       height: _itemHeight,
       padding: const EdgeInsets.all(4.0),
       color: selected ? ColorScheme.of(context).primary : null,
