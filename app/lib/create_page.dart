@@ -120,7 +120,7 @@ class _CreatePageState extends ConsumerState<CreatePage> {
         }
         return Center(
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: 1100),
+            constraints: BoxConstraints(maxWidth: 1196),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -145,7 +145,7 @@ class _CreatePageState extends ConsumerState<CreatePage> {
                         Flexible(
                           child: Container(
                             constraints: BoxConstraints(
-                              maxWidth: 40,
+                              maxWidth: 96,
                               minWidth: 0,
                             ),
                           ),
