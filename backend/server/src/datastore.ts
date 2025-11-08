@@ -1,12 +1,18 @@
 import sqlite3 from "sqlite3";
 import { S3Storage } from "./storage.js";
 
+export interface Thumbnail {
+  url: string;
+  width: number;
+  height: number;
+}
+
 export interface SearchResult {
   mediaId: string;
   startTime: number;
   startFrame: number;
   text: string;
-  image: string;
+  thumbnail: Thumbnail;
 }
 
 export interface Subtitle {
@@ -16,8 +22,8 @@ export interface Subtitle {
 
 export interface Frame {
   index: number;
-  image: string;
   subtitle: Subtitle | null;
+  thumbnail: Thumbnail;
 }
 
 export class Datastore {
@@ -65,9 +71,13 @@ export class Datastore {
           startTime: r.start_time,
           startFrame: r.start_frame,
           text: r.text,
-          image: this.storage.urlForKey(
-            this.storage.generateS3FrameKey(r.media_id, r.start_frame)
-          ),
+          thumbnail: {
+            url: this.storage.urlForKey(
+              this.storage.generateS3FrameKey(r.media_id, r.start_frame)
+            ),
+            width: 480,
+            height: 360,
+          },
         }));
         resolve({ results: mapped, totalResults: totalResults });
       });
@@ -109,7 +119,11 @@ export class Datastore {
       const key = this.storage.generateS3FrameKey(mediaId, i);
       const url = this.storage.urlForKey(key);
       const subtitle = await this.fetchSubtitleByFrame(mediaId, i);
-      results.push({ index: i, image: url, subtitle: subtitle });
+      results.push({
+        index: i,
+        subtitle: subtitle,
+        thumbnail: { url: url, width: 480, height: 360 },
+      });
     }
 
     return results;
@@ -135,7 +149,11 @@ export class Datastore {
       const key = this.storage.generateS3FrameKey(mediaId, i);
       const url = this.storage.urlForKey(key);
       const subtitle = await this.fetchSubtitleByFrame(mediaId, i);
-      results.push({ index: i, image: url, subtitle: subtitle });
+      results.push({
+        index: i,
+        subtitle: subtitle,
+        thumbnail: { url: url, width: 480, height: 360 },
+      });
     }
 
     return results;

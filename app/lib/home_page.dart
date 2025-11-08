@@ -112,14 +112,17 @@ class SearchResultCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Image.network(
-            result.image,
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) {
-                return child;
-              }
-              return Shimmer(child: Container(color: Colors.grey.shade300));
-            },
+          AspectRatio(
+            aspectRatio: result.thumbnail.aspectRatio,
+            child: Image.network(
+              result.thumbnail.url,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) {
+                  return child;
+                }
+                return Shimmer(child: Container(color: Colors.grey.shade300));
+              },
+            ),
           ),
           SizedBox(height: 8),
           SizedBox(

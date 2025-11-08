@@ -1,3 +1,4 @@
+import 'package:app/services/models/thumbnail.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'search.freezed.dart';
@@ -10,7 +11,7 @@ abstract class SearchResult with _$SearchResult {
     required int startTime,
     required int startFrame,
     required String text,
-    required String image,
+    required Thumbnail thumbnail,
   }) = _SearchResult;
 
   factory SearchResult.fromJson(Map<String, Object?> json) =>

@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:app/services/models/frame.dart';
+import 'package:app/widgets/proportional_font_size_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:shimmer_animation/shimmer_animation.dart';
 
 class MemePreview extends StatefulWidget {
@@ -43,7 +45,9 @@ class _MemePreviewState extends State<MemePreview> {
 
   void _cacheFrames() async {
     await Future.wait(
-      widget.frames.map((e) => precacheImage(NetworkImage(e.image), context)),
+      widget.frames.map(
+        (e) => precacheImage(NetworkImage(e.thumbnail.url), context),
+      ),
     );
     if (!mounted) {
       return;
@@ -65,15 +69,14 @@ class _MemePreviewState extends State<MemePreview> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 500,
-      height: 400,
-      child: Builder(
-        builder: (context) {
-          if (widget.frames.isEmpty) {
-            return const SizedBox.shrink();
-          }
-          return Shimmer(
+    return Builder(
+      builder: (context) {
+        if (widget.frames.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        return AspectRatio(
+          aspectRatio: widget.frames.first.thumbnail.aspectRatio,
+          child: Shimmer(
             enabled: _loading,
             child: MouseRegion(
               cursor: SystemMouseCursors.text,
@@ -85,60 +88,64 @@ class _MemePreviewState extends State<MemePreview> {
                     _Playback(frames: widget.frames),
                     Align(
                       alignment: Alignment.bottomCenter,
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 16.0),
-                        child: ExcludeFocus(
-                          child: IgnorePointer(
-                            child: TextFormField(
-                              controller: widget.textController,
-                              minLines: 1,
-                              maxLines: 4,
-                              scrollPhysics: NeverScrollableScrollPhysics(),
-                              enabled: false,
-                              textAlign: TextAlign.center,
-                              decoration: InputDecoration(
-                                border: InputBorder.none,
-                              ),
-                              style: TextStyle(
-                                fontFamily: 'Impact',
-                                fontSize: 26,
-                                foreground: Paint()
-                                  ..style = PaintingStyle.stroke
-                                  ..strokeWidth = 4
-                                  ..color = Colors.black,
-                              ),
-                            ),
+                      child: ExcludeFocus(
+                        child: IgnorePointer(
+                          child: ProportionalFontSizeBuilder(
+                            builder: (context, fontSize) {
+                              return TextFormField(
+                                controller: widget.textController,
+                                scrollPhysics: NeverScrollableScrollPhysics(),
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                ),
+                                minLines: 1,
+                                maxLines: 4,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontFamily: 'Impact',
+                                  fontSize: fontSize,
+                                  foreground: Paint()
+                                    ..style = PaintingStyle.stroke
+                                    ..strokeWidth = 4
+                                    ..color = Colors.black,
+                                ),
+                              );
+                            },
                           ),
                         ),
                       ),
                     ),
                     Align(
                       alignment: Alignment.bottomCenter,
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 16.0),
-                        child: TextFormField(
-                          controller: widget.textController,
-                          focusNode: _textFieldFocusNode,
-                          minLines: 1,
-                          maxLines: 4,
-                          scrollPhysics: NeverScrollableScrollPhysics(),
-                          textAlign: TextAlign.center,
-                          decoration: InputDecoration(border: InputBorder.none),
-                          style: TextStyle(
-                            fontFamily: 'Impact',
-                            fontSize: 26,
-                            color: Colors.white,
-                          ),
-                        ),
+                      child: ProportionalFontSizeBuilder(
+                        builder: (context, fontSize) {
+                          return TextFormField(
+                            controller: widget.textController,
+                            focusNode: _textFieldFocusNode,
+                            inputFormatters: [CapitalizeTextInputFormatter()],
+                            scrollPhysics: NeverScrollableScrollPhysics(),
+                            decoration: InputDecoration(
+                              border: InputBorder.none,
+                            ),
+                            minLines: 1,
+                            maxLines: 4,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: 'Impact',
+                              fontSize: fontSize,
+                              color: Colors.white,
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -187,6 +194,19 @@ class _PlaybackState extends State<_Playback>
     final frameIndex =
         ((_elapsed.inMilliseconds ~/ _frameDuration.inMilliseconds) %
         frameCount);
-    return Image.network(widget.frames[frameIndex].image, fit: BoxFit.contain);
+    return Image.network(
+      widget.frames[frameIndex].thumbnail.url,
+      fit: BoxFit.contain,
+    );
+  }
+}
+
+class CapitalizeTextInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    return newValue.copyWith(text: newValue.text.toUpperCase());
   }
 }

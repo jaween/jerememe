@@ -32,6 +32,8 @@ class _CreatePageState extends ConsumerState<CreatePage> {
   final _textController = TextEditingController();
   AsyncValue<Frames> _frames = AsyncLoading();
   AsyncValue<Frames> _reducedFrames = AsyncLoading();
+  final _memePreviewColumnKey = GlobalKey();
+  final _framesColumnKey = GlobalKey();
 
   late final _provider = framesRepositoryProvider(
     widget.mediaId,
@@ -42,9 +44,6 @@ class _CreatePageState extends ConsumerState<CreatePage> {
     startFrame: widget.frameIndex,
     endFrame: widget.frameIndex,
   );
-
-  final _uploadProgressNotifier = ValueNotifier<double>(0);
-  bool _creating = false;
 
   @override
   void initState() {
@@ -84,106 +83,100 @@ class _CreatePageState extends ConsumerState<CreatePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: 232,
-            child: switch (_reducedFrames) {
-              AsyncLoading() => ListView.builder(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                itemBuilder: (context, index) {
-                  return _FrameContainer(
-                    child: Shimmer(child: Container(color: Colors.black)),
-                  );
-                },
-              ),
-              AsyncError(:final error) => Center(child: Text(error.toString())),
-              AsyncData(:final value) => _FrameRangePicker(
-                range: _range,
-                onRangeChanged: (range) {
-                  setState(() => _range = range);
-                  _textController.text = _createCaption(
-                    value.selectedFrames(range),
-                  );
-                },
-                frames: value.frames,
-                isFetchingStart: value.isFetchingStart,
-                isFetchingEnd: value.isFetchingEnd,
-                onFetchStart: ref.read(_provider.notifier).fetchStart,
-                onFetchEnd: ref.read(_provider.notifier).fetchEnd,
-              ),
-            },
-          ),
-          SizedBox(width: 96),
-          Container(
-            constraints: BoxConstraints(maxWidth: 500),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 800) {
+          return Center(
             child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SizedBox(
-                  width: 500,
-                  height: 400,
-                  child: Shimmer(
-                    enabled: _frames is AsyncLoading,
-                    child: Builder(
-                      builder: (context) {
-                        return switch (_frames) {
-                          AsyncLoading() => SizedBox.shrink(),
-                          AsyncError(:final error) => Center(
-                            child: Text(error.toString()),
-                          ),
-                          AsyncData(:final value) => MemePreview(
-                            key: ValueKey(_range.hashCode),
-                            textController: _textController,
-                            frames: value.selectedFrames(_range).toList(),
-                          ),
-                        };
-                      },
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: 500),
+                    child: _MemeColumn(
+                      key: _memePreviewColumnKey,
+                      textController: _textController,
+                      mediaId: widget.mediaId,
+                      frames: _frames,
+                      range: _range,
                     ),
                   ),
                 ),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: ValueListenableBuilder(
-                    valueListenable: _textController,
-                    builder: (context, value, child) {
-                      return TextButton.icon(
-                        onPressed: value.text.isEmpty
-                            ? null
-                            : _textController.clear,
-                        label: Text('Remove text'),
-                        icon: Icon(Icons.clear),
-                      );
+                SizedBox(height: 16),
+                Expanded(
+                  child: _FramesColumn(
+                    key: _framesColumnKey,
+                    frames: _reducedFrames,
+                    range: _range,
+                    onRangeChanged: (range, frames) {
+                      setState(() => _range = range);
+                      _textController.text = _createCaption(frames);
                     },
+                    onFetchStart: ref.read(_provider.notifier).fetchStart,
+                    onFetchEnd: ref.read(_provider.notifier).fetchEnd,
                   ),
                 ),
-                SizedBox(height: 64),
+              ],
+            ),
+          );
+        }
+        return Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: 1100),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
                 SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: !_creating
-                      ? FilledButton.icon(
-                          onPressed: _creating ? null : _postMeme,
-                          label: Text('Finish'),
-                          icon: Icon(Icons.done),
-                        )
-                      : ValueListenableBuilder(
-                          valueListenable: _uploadProgressNotifier,
-                          builder: (context, value, child) {
-                            return LinearProgressIndicator(value: value);
-                          },
+                  width: 232,
+                  child: _FramesColumn(
+                    key: _framesColumnKey,
+                    frames: _reducedFrames,
+                    range: _range,
+                    onRangeChanged: (range, frames) {
+                      setState(() => _range = range);
+                      _textController.text = _createCaption(frames);
+                    },
+                    onFetchStart: ref.read(_provider.notifier).fetchStart,
+                    onFetchEnd: ref.read(_provider.notifier).fetchEnd,
+                  ),
+                ),
+                Expanded(
+                  child: Center(
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: Container(
+                            constraints: BoxConstraints(
+                              maxWidth: 40,
+                              minWidth: 0,
+                            ),
+                          ),
                         ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(maxWidth: 500),
+                            child: _MemeColumn(
+                              key: _memePreviewColumnKey,
+                              textController: _textController,
+                              mediaId: widget.mediaId,
+                              frames: _frames,
+                              range: _range,
+                            ),
+                          ),
+                        ),
+                        ConstrainedBox(
+                          constraints: BoxConstraints(maxWidth: 232),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
-          SizedBox(width: 96),
-          SizedBox(width: 232),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -197,13 +190,104 @@ class _CreatePageState extends ConsumerState<CreatePage> {
         subtitles.add(subtitle.text);
       }
     }
-    return subtitles.join('\n');
+    return subtitles.join('\n').toUpperCase();
+  }
+}
+
+class _MemeColumn extends ConsumerStatefulWidget {
+  final TextEditingController textController;
+  final String mediaId;
+  final AsyncValue<Frames> frames;
+  final _FrameRange range;
+
+  const _MemeColumn({
+    super.key,
+    required this.textController,
+    required this.mediaId,
+    required this.frames,
+    required this.range,
+  });
+
+  @override
+  ConsumerState<_MemeColumn> createState() => _MemeColumnState();
+}
+
+class _MemeColumnState extends ConsumerState<_MemeColumn> {
+  final _uploadProgressNotifier = ValueNotifier<double>(0);
+  bool _creating = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Flexible(
+          child: Shimmer(
+            enabled: widget.frames is AsyncLoading,
+            child: Builder(
+              builder: (context) {
+                return switch (widget.frames) {
+                  AsyncLoading() => SizedBox.shrink(),
+                  AsyncError(:final error) => Center(
+                    child: Text(error.toString()),
+                  ),
+                  AsyncData(:final value) => MemePreview(
+                    key: ValueKey(widget.range.hashCode),
+                    textController: widget.textController,
+                    frames: value.selectedFrames(widget.range).toList(),
+                  ),
+                };
+              },
+            ),
+          ),
+        ),
+        SizedBox(height: 16),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: ValueListenableBuilder(
+            valueListenable: widget.textController,
+            builder: (context, value, child) {
+              return TextButton.icon(
+                onPressed: value.text.isEmpty
+                    ? null
+                    : widget.textController.clear,
+                label: Text('Remove text'),
+                icon: Icon(Icons.clear),
+              );
+            },
+          ),
+        ),
+        SizedBox(height: 32),
+        SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: Builder(
+            builder: (context) {
+              if (!_creating) {
+                return FilledButton.icon(
+                  onPressed: _creating ? null : _postMeme,
+                  label: Text('Finish'),
+                  icon: Icon(Icons.done),
+                );
+              }
+              return ValueListenableBuilder(
+                valueListenable: _uploadProgressNotifier,
+                builder: (context, value, child) {
+                  return LinearProgressIndicator(value: value);
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
   }
 
   void _postMeme() async {
-    final startIndex = _range.startFrame;
-    final endIndex = _range.endFrame;
-    final text = _textController.text;
+    final startIndex = widget.range.startFrame;
+    final endIndex = widget.range.endFrame;
+    final text = widget.textController.text;
     _uploadProgressNotifier.value = 0;
 
     final api = ref.read(apiServiceProvider);
@@ -227,6 +311,47 @@ class _CreatePageState extends ConsumerState<CreatePage> {
       case Right(:final value):
         context.pushNamed('result', extra: value.data);
     }
+  }
+}
+
+class _FramesColumn extends StatelessWidget {
+  final AsyncValue<Frames> frames;
+  final _FrameRange range;
+  final void Function(_FrameRange range, List<Frame> frames) onRangeChanged;
+  final VoidCallback onFetchStart;
+  final VoidCallback onFetchEnd;
+
+  const _FramesColumn({
+    super.key,
+    required this.frames,
+    required this.range,
+    required this.onRangeChanged,
+    required this.onFetchStart,
+    required this.onFetchEnd,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return switch (frames) {
+      AsyncLoading() => ListView.builder(
+        padding: EdgeInsets.symmetric(horizontal: 16),
+        itemBuilder: (context, index) {
+          return _FrameContainer(
+            child: Shimmer(child: Container(color: Colors.black)),
+          );
+        },
+      ),
+      AsyncError(:final error) => Center(child: Text(error.toString())),
+      AsyncData(:final value) => _FrameRangePicker(
+        range: range,
+        onRangeChanged: (range) => (range, value.selectedFrames(range)),
+        frames: value.frames,
+        isFetchingStart: value.isFetchingStart,
+        isFetchingEnd: value.isFetchingEnd,
+        onFetchStart: onFetchStart,
+        onFetchEnd: onFetchEnd,
+      ),
+    };
   }
 }
 
@@ -339,7 +464,7 @@ class _FrameRangePickerState extends State<_FrameRangePicker> {
             child: _FrameContainer(
               selected: selected,
               child: Image.network(
-                frame.image,
+                frame.thumbnail.url,
                 loadingBuilder: (context, child, loadingProgress) {
                   return Shimmer(
                     enabled: loadingProgress != null,

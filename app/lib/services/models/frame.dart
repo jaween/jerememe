@@ -1,3 +1,4 @@
+import 'package:app/services/models/thumbnail.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'frame.freezed.dart';
@@ -7,7 +8,7 @@ part 'frame.g.dart';
 abstract class Frame with _$Frame {
   const factory Frame({
     required int index,
-    required String image,
+    required Thumbnail thumbnail,
     required Subtitle? subtitle,
   }) = _Frame;
 

@@ -15,7 +15,7 @@ export class VideoEncoder {
 
     const buffers = await Promise.all(
       frames.map(async (f) => {
-        const res = await axios.get<ArrayBuffer>(f.image, {
+        const res = await axios.get<ArrayBuffer>(f.thumbnail.url, {
           responseType: "arraybuffer",
         });
         return Buffer.from(res.data);

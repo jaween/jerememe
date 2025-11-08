@@ -184,42 +184,57 @@ class _ShellState extends State<_Shell> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Stack(
-            children: [
-              if (_canPop)
-                Positioned(
-                  left: 32,
-                  top: 32,
-                  child: BackButton(
-                    onPressed: () {
-                      // Extra check as we waited a frame earlier
-                      if (GoRouter.of(context).canPop()) {
-                        context.pop();
-                      }
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      if (_canPop)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: BackButton(
+                            onPressed: () {
+                              // Extra check as we waited a frame earlier
+                              if (GoRouter.of(context).canPop()) {
+                                context.pop();
+                              }
+                            },
+                          ),
+                        ),
+                      Expanded(child: AppLogo()),
+                      // Used to balance logo (stays vertically centered)
+                      if (_canPop)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: ExcludeFocus(
+                            child: Opacity(
+                              opacity: 0,
+                              child: IgnorePointer(
+                                child: BackButton(onPressed: null),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  Consumer(
+                    builder: (context, ref, child) {
+                      return SearchField(
+                        initialValue: ref.watch(searchQueryProvider),
+                        onQuery: (query) {
+                          ref
+                              .read(searchQueryProvider.notifier)
+                              .setQuery(query);
+                          context.goNamed('home');
+                        },
+                      );
                     },
                   ),
-                ),
-              Center(
-                child: Column(
-                  children: [
-                    AppLogo(),
-                    Consumer(
-                      builder: (context, ref, child) {
-                        return SearchField(
-                          initialValue: ref.watch(searchQueryProvider),
-                          onQuery: (query) {
-                            ref
-                                .read(searchQueryProvider.notifier)
-                                .setQuery(query);
-                            context.goNamed('home');
-                          },
-                        );
-                      },
-                    ),
-                  ],
-                ),
+                ],
               ),
-            ],
+            ),
           ),
           SizedBox(height: 32),
           Expanded(child: widget.child),
