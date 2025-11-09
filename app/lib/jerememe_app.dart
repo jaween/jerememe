@@ -96,7 +96,6 @@ class _RouterBuilderState extends State<_RouterBuilder> {
       observers: widget.navigatorObservers,
       initialLocation: initialLocation,
       overridePlatformDefaultLocation: true,
-
       errorBuilder: (context, state) => const ErrorPage(),
       routes: [
         ShellRoute(
