@@ -13,6 +13,9 @@ void main() async {
   const apiBaseUrl = String.fromEnvironment('API_BASE_URL');
   final apiService = ApiService(baseUrl: apiBaseUrl);
 
+  // Request to warm up the server
+  apiService.headRoot();
+
   await GoogleFonts.pendingFonts([GoogleFonts.rubik()]);
 
   runApp(

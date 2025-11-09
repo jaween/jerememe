@@ -27,6 +27,15 @@ class ApiService {
 
   void dispose() => _client.close();
 
+  Future<Either<String, void>> headRoot() {
+    return _makeRequest(
+      request: () => _client.head(Uri.parse('/'), headers: _headers),
+      handleResponse: (json) {
+        return Right(null);
+      },
+    );
+  }
+
   Future<Either<String, SearchResponse>> getSearch({
     required String query,
     int offset = 0,
