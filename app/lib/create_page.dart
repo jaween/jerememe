@@ -242,7 +242,7 @@ class _MemeColumnState extends ConsumerState<_MemeColumn> {
         ),
         SizedBox(height: 16),
         Align(
-          alignment: Alignment.centerLeft,
+          alignment: Alignment.centerRight,
           child: ValueListenableBuilder(
             valueListenable: widget.textController,
             builder: (context, value, child) {

@@ -47,36 +47,19 @@ export class VideoEncoder {
       "pipe:0",
       "-vf",
       `drawtext=fontfile=/usr/share/fonts/truetype/msttcorefonts/Impact.ttf:text='${escapedText}':fontcolor=white:fontsize=26:borderw=2:bordercolor=black:text_align=center:x=(w-text_w)/2:y=h-text_h-20`,
+      "-vcodec",
+      "libwebp",
+      "-lossless",
+      "1",
+      "-qscale",
+      "75",
+      "-preset",
+      "default",
+      "-an",
+      "-f",
+      "webp",
+      "pipe:1",
     ];
-
-    if (isSingleFrame) {
-      ffmpegArgs.push(
-        "-vcodec",
-        "libwebp",
-        "-lossless",
-        "1",
-        "-qscale",
-        "75",
-        "-preset",
-        "default",
-        "-an",
-        "-f",
-        "webp",
-        "pipe:1"
-      );
-    } else {
-      ffmpegArgs.push(
-        "-pix_fmt",
-        "yuv420p",
-        "-vcodec",
-        "libvpx-vp9",
-        "-b:v",
-        "1M",
-        "-f",
-        "webm",
-        "pipe:1"
-      );
-    }
 
     const ffmpeg = spawn("ffmpeg", ffmpegArgs);
     inputStream.pipe(ffmpeg.stdin);
@@ -92,7 +75,7 @@ export class VideoEncoder {
         }
         resolve({
           data: Buffer.concat(chunks),
-          mimeType: isSingleFrame ? "image/webp" : "video/webm",
+          mimeType: "image/webp",
           isVideo: !isSingleFrame,
         });
       });
