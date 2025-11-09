@@ -13,7 +13,11 @@ void main() async {
   GoRouter.optionURLReflectsImperativeAPIs = true;
 
   const apiBaseUrl = String.fromEnvironment('API_BASE_URL');
-  final apiService = ApiService(baseUrl: apiBaseUrl);
+  const viewerBaseUrl = String.fromEnvironment('VIEWER_BASE_URL');
+  final apiService = ApiService(
+    apiBaseUrl: apiBaseUrl,
+    viewerBaseUrl: viewerBaseUrl,
+  );
 
   // Request to warm up the server
   apiService.headRoot();

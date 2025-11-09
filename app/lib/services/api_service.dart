@@ -19,13 +19,19 @@ class ApiService {
   final String _baseUrl;
   late final Map<String, String> _headers;
   final http.Client _client;
+  final String _viewerBaseUrl;
 
-  ApiService({required String baseUrl})
-    : _baseUrl = '$baseUrl/v1',
+  ApiService({required String apiBaseUrl, required String viewerBaseUrl})
+    : _baseUrl = '$apiBaseUrl/v1',
+      _viewerBaseUrl = viewerBaseUrl,
       _headers = {'content-type': 'application/json'},
       _client = http.Client();
 
   void dispose() => _client.close();
+
+  String urlForViewingKey(String memeKey) {
+    return '$_viewerBaseUrl/$memeKey';
+  }
 
   Future<Either<String, void>> headRoot() {
     return _makeRequest(

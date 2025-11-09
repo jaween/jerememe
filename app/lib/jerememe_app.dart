@@ -2,6 +2,7 @@ import 'package:app/create_page.dart';
 import 'package:app/error_page.dart';
 import 'package:app/home_page.dart';
 import 'package:app/repositories/search_repository.dart';
+import 'package:app/services/api_service.dart';
 import 'package:app/viewer_page.dart';
 import 'package:app/widgets/app_logo.dart';
 import 'package:app/widgets/search_field.dart';
@@ -125,11 +126,15 @@ class _RouterBuilderState extends State<_RouterBuilder> {
               path: '/m/:id',
               name: 'viewer',
               builder: (context, state) {
-                final url = state.extra as String?;
-                if (url == null) {
-                  throw 'Missing URL extra';
-                }
-                return SelectionArea(child: ViewerPage(url: url));
+                return Consumer(
+                  builder: (context, ref, child) {
+                    final api = ref.read(apiServiceProvider);
+                    final pathWithLeadingSlash = state.uri.path;
+                    final memeKey = pathWithLeadingSlash.substring(1);
+                    final url = api.urlForViewingKey(memeKey);
+                    return SelectionArea(child: ViewerPage(url: url));
+                  },
+                );
               },
             ),
           ],
