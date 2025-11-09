@@ -33,13 +33,8 @@ class ApiService {
     return '$_viewerBaseUrl/$memeKey';
   }
 
-  Future<Either<String, void>> headRoot() {
-    return _makeRequest(
-      request: () => _client.head(Uri.parse('/'), headers: _headers),
-      handleResponse: (json) {
-        return Right(null);
-      },
-    );
+  Future<void> headRoot() async {
+    await _client.head(Uri.parse('/'), headers: _headers);
   }
 
   Future<Either<String, SearchResponse>> getSearch({
