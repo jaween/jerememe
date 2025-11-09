@@ -36,10 +36,17 @@ class _MemeDisplayState extends State<MemeDisplay> {
     if (isVideo == null) {
       return SizedBox.shrink();
     }
-    if (isVideo) {
-      return MemeVideoPlayer(url: widget.url);
-    } else {
-      return Image.network(widget.url);
-    }
+    return SizedBox(
+      width: 500,
+      child: Builder(
+        builder: (context) {
+          if (isVideo) {
+            return MemeVideoPlayer(url: widget.url);
+          } else {
+            return Image.network(widget.url);
+          }
+        },
+      ),
+    );
   }
 }
