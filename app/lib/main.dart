@@ -10,8 +10,8 @@ void main() async {
 
   setUrlStrategy(PathUrlStrategy());
 
-  const baseUrl = 'https://api.meme.tehpwnagefeed.online/v1';
-  final apiService = ApiService(baseUrl: baseUrl);
+  const apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+  final apiService = ApiService(baseUrl: apiBaseUrl);
 
   await GoogleFonts.pendingFonts([GoogleFonts.rubik()]);
 

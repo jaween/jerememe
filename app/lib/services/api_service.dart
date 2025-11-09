@@ -21,7 +21,7 @@ class ApiService {
   final http.Client _client;
 
   ApiService({required String baseUrl})
-    : _baseUrl = baseUrl,
+    : _baseUrl = '$baseUrl/v1',
       _headers = {'content-type': 'application/json'},
       _client = http.Client();
 

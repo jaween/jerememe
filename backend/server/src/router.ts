@@ -81,7 +81,8 @@ export function router(
     }
 
     send({ type: "progress", progress: 0.8 });
-    const key = storage.generateMemeKey(shortUUID.generate());
+    const id = shortUUID.generate().substring(0, 8);
+    const key = storage.generateMemeKey(id);
     try {
       await storage.upload(key, encodingResult.data, encodingResult.mimeType);
     } catch {
@@ -93,7 +94,7 @@ export function router(
     const url = storage.urlForKey(key);
     send({
       type: "complete",
-      data: { url: url, isVideo: encodingResult.isVideo },
+      data: { url: url, id: id, isVideo: encodingResult.isVideo },
     });
     res.end();
   });

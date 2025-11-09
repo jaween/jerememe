@@ -38,7 +38,7 @@ export class S3Storage {
   }
 
   public generateMemeKey(id: string): string {
-    return `user/${id}`;
+    return `m/${id}`;
   }
 
   public urlForKey(key: string): string {

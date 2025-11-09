@@ -2,8 +2,7 @@ import 'package:app/create_page.dart';
 import 'package:app/error_page.dart';
 import 'package:app/home_page.dart';
 import 'package:app/repositories/search_repository.dart';
-import 'package:app/result_page.dart';
-import 'package:app/services/models/meme.dart';
+import 'package:app/viewer_page.dart';
 import 'package:app/widgets/app_logo.dart';
 import 'package:app/widgets/search_field.dart';
 import 'package:flutter/foundation.dart';
@@ -124,14 +123,14 @@ class _RouterBuilderState extends State<_RouterBuilder> {
               ],
             ),
             GoRoute(
-              path: 'meme',
-              name: 'result',
+              path: '/m/:id',
+              name: 'viewer',
               builder: (context, state) {
-                final meme = state.extra as Meme?;
-                if (meme == null) {
-                  throw 'Missing meme';
+                final url = state.extra as String?;
+                if (url == null) {
+                  throw 'Missing URL extra';
                 }
-                return SelectionArea(child: ResultPage(meme: meme));
+                return SelectionArea(child: ViewerPage(url: url));
               },
             ),
           ],
