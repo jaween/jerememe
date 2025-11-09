@@ -16,38 +16,41 @@ class _ViewerPageState extends State<ViewerPage> {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          MemeDisplay(url: widget.url),
-          SizedBox(height: 16),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextButton.icon(
-                onPressed: () => _copy(widget.url),
-                label: Text('Copy Link'),
-                icon: Icon(Icons.copy),
-              ),
-              SizedBox(height: 4),
-              ShareBuilder(
-                data: Data(url: widget.url),
-                builder: (context, onShare) {
-                  if (onShare == null) {
-                    return SizedBox.shrink();
-                  }
-                  return TextButton.icon(
-                    onPressed: onShare,
-                    label: Text('Share Meme'),
-                    icon: Icon(Icons.ios_share),
-                  );
-                },
-              ),
-            ],
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            MemeDisplay(url: widget.url),
+            SizedBox(height: 16),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextButton.icon(
+                  onPressed: () => _copy(widget.url),
+                  label: Text('Copy Link'),
+                  icon: Icon(Icons.copy),
+                ),
+                SizedBox(height: 4),
+                ShareBuilder(
+                  data: Data(url: widget.url),
+                  builder: (context, onShare) {
+                    if (onShare == null) {
+                      return SizedBox.shrink();
+                    }
+                    return TextButton.icon(
+                      onPressed: onShare,
+                      label: Text('Share Meme'),
+                      icon: Icon(Icons.ios_share),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -56,7 +59,7 @@ class _ViewerPageState extends State<ViewerPage> {
     Clipboard.setData(ClipboardData(text: url));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        width: 500,
+        width: 500 - 16 * 2,
         backgroundColor: Colors.black,
         shape: RoundedRectangleBorder(
           side: BorderSide(color: Colors.white),
