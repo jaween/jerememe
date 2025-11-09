@@ -1,4 +1,5 @@
 import 'package:app/widgets/meme_display.dart';
+import 'package:app/widgets/share_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -17,13 +18,34 @@ class _ViewerPageState extends State<ViewerPage> {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           MemeDisplay(url: widget.url),
           SizedBox(height: 16),
-          OutlinedButton.icon(
-            onPressed: () => _copy(widget.url),
-            label: Text(widget.url),
-            icon: Icon(Icons.copy),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextButton.icon(
+                onPressed: () => _copy(widget.url),
+                label: Text('Copy Link'),
+                icon: Icon(Icons.copy),
+              ),
+              SizedBox(height: 4),
+              ShareBuilder(
+                data: Data(url: widget.url),
+                builder: (context, onShare) {
+                  if (onShare == null) {
+                    return SizedBox.shrink();
+                  }
+                  return TextButton.icon(
+                    onPressed: onShare,
+                    label: Text('Share Meme'),
+                    icon: Icon(Icons.ios_share),
+                  );
+                },
+              ),
+            ],
           ),
         ],
       ),
@@ -34,7 +56,13 @@ class _ViewerPageState extends State<ViewerPage> {
     Clipboard.setData(ClipboardData(text: url));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Copied To Clipboard'),
+        width: 500,
+        backgroundColor: Colors.black,
+        shape: RoundedRectangleBorder(
+          side: BorderSide(color: Colors.white),
+          borderRadius: BorderRadiusGeometry.all(Radius.circular(8)),
+        ),
+        content: Text('Link Copied', style: TextStyle(color: Colors.white)),
         behavior: SnackBarBehavior.floating,
       ),
     );
