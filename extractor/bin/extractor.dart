@@ -16,7 +16,10 @@ void main(List<String> arguments) async {
     print('Usage: ./extractor <MEDIA DIRECTORY NAME>');
     exit(1);
   }
-  final files = Directory(directoryPath).listSync().whereType<File>().toList();
+  final mediaFiles =
+      Directory(directoryPath).listSync().whereType<File>().where(
+        (e) => path.extension(e.path) != '.srt',
+      )..toList();
   final dotEnv = DotEnv()..load();
   final s3 = S3Storage(
     accessKey: dotEnv.getOrElse('AWS_ACCESS_KEY', () => ''),
@@ -28,7 +31,7 @@ void main(List<String> arguments) async {
   final database = await Database.connect('./data.db');
   final fileMetadataPairs = <(File, MediaMetadata)>[];
   for (final metadata in mediaMetadata) {
-    final file = files.firstWhereOrNull(
+    final file = mediaFiles.firstWhereOrNull(
       (e) => path.basenameWithoutExtension(e.path) == metadata.id,
     );
     if (file == null) {
@@ -42,9 +45,19 @@ void main(List<String> arguments) async {
   }
 
   for (final pair in fileMetadataPairs) {
-    final file = pair.$1;
+    final videoFile = pair.$1;
     final metadata = pair.$2;
-    await _extract(s3: s3, database: database, metadata: metadata, file: file);
+    final subtitlePath = path.join(
+      path.dirname(videoFile.path),
+      '${path.basenameWithoutExtension(videoFile.path)}.srt',
+    );
+    await _extract(
+      s3: s3,
+      database: database,
+      metadata: metadata,
+      mediaFile: videoFile,
+      subtitleFile: File(subtitlePath),
+    );
   }
 }
 
@@ -52,11 +65,12 @@ Future<void> _extract({
   required S3Storage s3,
   required Database database,
   required MediaMetadata metadata,
-  required File file,
+  required File mediaFile,
+  required File subtitleFile,
 }) async {
   print('Processing ${metadata.id}');
 
-  final lines = await extractSubtitleLines(file.path);
+  final lines = await parseSrtFile(subtitleFile.path);
   if (lines == null) {
     print('Failed to extract subtitles');
     return;
@@ -65,8 +79,8 @@ Future<void> _extract({
   await database.addLines(mediaId: metadata.id, lines: lines);
 
   const extractDuration = Duration(minutes: 1);
-  final resolution = await getVideoResolution(file.path);
-  final videoDuration = await getVideoDuration(file.path);
+  final resolution = await getVideoResolution(mediaFile.path);
+  final videoDuration = await getVideoDuration(mediaFile.path);
   int frameCount = 0;
   for (
     Duration skip = Duration.zero;
@@ -78,7 +92,7 @@ Future<void> _extract({
     );
     final frames = await extractFrames(
       mediaId: metadata.id,
-      videoPath: file.path,
+      videoPath: mediaFile.path,
       skip: skip,
       duration: extractDuration,
     );

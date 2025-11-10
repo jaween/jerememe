@@ -5,11 +5,8 @@ import 'dart:typed_data';
 import 'package:extractor/media.dart';
 import 'package:extractor/subtitles.dart';
 
-Future<List<SubtitleLine>?> extractSubtitleLines(String videoPath) async {
-  final text = await _extractSubtitlesFromVideoFile(videoPath);
-  if (text == null) {
-    return null;
-  }
+Future<List<SubtitleLine>?> parseSrtFile(String srtPath) async {
+  final text = await File(srtPath).readAsString();
   return _parseSrt(text);
 }
 
@@ -116,26 +113,6 @@ String _formatFfmpegTime(Duration duration) {
   final minutes = duration.inMinutes % 60;
   final seconds = duration.inSeconds % 60;
   return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-}
-
-Future<String?> _extractSubtitlesFromVideoFile(String videoPath) async {
-  try {
-    final result = await Process.run('ffmpeg', [
-      '-hide_banner',
-      '-loglevel',
-      'error',
-      '-i',
-      videoPath,
-      '-map',
-      '0:s:0',
-      '-f',
-      'srt',
-      '-',
-    ]);
-    return result.stdout;
-  } catch (e) {
-    return null;
-  }
 }
 
 List<SubtitleLine> _parseSrt(String srt) {
