@@ -27,6 +27,8 @@ Future<List<Uint8List>> extractFrames({
     _formatFfmpegTime(skip),
     '-i',
     videoPath,
+    '-vf',
+    'scale=-1:360',
     '-t',
     _formatFfmpegTime(duration),
     '-r',
