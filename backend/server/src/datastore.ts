@@ -64,22 +64,29 @@ export class Datastore {
       ORDER BY s.media_id, s.line_number
       LIMIT ? OFFSET ?;
     `;
-      this.db.all(sql, [safeQuery, limit, offset], (error, rows) => {
-        if (error) return reject(error);
-        const mapped = rows.map<SearchResult>((r: any) => ({
-          mediaId: r.media_id,
-          startTime: r.start_time,
-          startFrame: r.start_frame,
-          text: r.text,
-          thumbnail: {
-            url: this.storage.urlForKey(
-              this.storage.generateS3FrameKey(r.media_id, r.start_frame)
-            ),
-            width: 480,
-            height: 360,
-          },
-        }));
-        resolve({ results: mapped, totalResults: totalResults });
+      this.db.all(sql, [safeQuery, limit, offset], async (error, rows) => {
+        if (error) {
+          return reject(error);
+        }
+        const results: SearchResult[] = [];
+        for (const row of rows) {
+          const r = row as any;
+          const resolution = await this.resolutionOfMedia(r.media_id);
+          results.push({
+            mediaId: r.media_id,
+            startTime: r.start_time,
+            startFrame: r.start_frame,
+            text: r.text,
+            thumbnail: {
+              url: this.storage.urlForKey(
+                this.storage.generateS3FrameKey(r.media_id, r.start_frame)
+              ),
+              width: resolution.width,
+              height: resolution.height,
+            },
+          });
+        }
+        resolve({ results: results, totalResults: totalResults });
       });
     });
   }
@@ -103,6 +110,8 @@ export class Datastore {
       return [];
     }
 
+    const resolution = await this.resolutionOfMedia(mediaId);
+
     if (direction === "before") {
       start = Math.max(index - count, 0);
       end = index - 1;
@@ -122,7 +131,11 @@ export class Datastore {
       results.push({
         index: i,
         subtitle: subtitle,
-        thumbnail: { url: url, width: 480, height: 360 },
+        thumbnail: {
+          url: url,
+          width: resolution.width,
+          height: resolution.height,
+        },
       });
     }
 
@@ -144,6 +157,7 @@ export class Datastore {
       throw "Frame range too large";
     }
 
+    const resolution = await this.resolutionOfMedia(mediaId);
     const results: Frame[] = [];
     for (let i = startFrame; i <= endFrame; i++) {
       const key = this.storage.generateS3FrameKey(mediaId, i);
@@ -152,7 +166,11 @@ export class Datastore {
       results.push({
         index: i,
         subtitle: subtitle,
-        thumbnail: { url: url, width: 480, height: 360 },
+        thumbnail: {
+          url: url,
+          width: resolution.width,
+          height: resolution.height,
+        },
       });
     }
 
@@ -168,6 +186,21 @@ export class Datastore {
         }
         const row: any = rows[0];
         resolve(row.duration_frames);
+      });
+    });
+  }
+
+  public async resolutionOfMedia(
+    mediaId: string
+  ): Promise<{ width: number; height: number }> {
+    return new Promise((resolve, reject) => {
+      const sql = `SELECT resolution_width, resolution_height FROM media WHERE id=?`;
+      this.db.all(sql, [mediaId], (error, rows) => {
+        if (error) {
+          return reject(error);
+        }
+        const row: any = rows[0];
+        resolve({ width: row.resolution_width, height: row.resolution_height });
       });
     });
   }
