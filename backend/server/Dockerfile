@@ -4,10 +4,6 @@ ENV NODE_ENV $NODE_ENV
 ENV BASE_URL $BASE_URL
 
 RUN apk add --no-cache ffmpeg
-# "Impact" font
-RUN apk --no-cache add msttcorefonts-installer fontconfig && \
-    update-ms-fonts && \
-    fc-cache -f
 
 # Source code
 WORKDIR /srv/

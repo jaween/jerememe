@@ -91,6 +91,7 @@ class _MemePreviewState extends State<MemePreview> {
                       child: ExcludeFocus(
                         child: IgnorePointer(
                           child: ProportionalFontSizeBuilder(
+                            baseFontSize: 24,
                             builder: (context, fontSize) {
                               return TextFormField(
                                 controller: widget.textController,
@@ -102,7 +103,7 @@ class _MemePreviewState extends State<MemePreview> {
                                 maxLines: 4,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  fontFamily: 'Impact',
+                                  fontFamily: 'Lithos',
                                   fontSize: fontSize,
                                   foreground: Paint()
                                     ..style = PaintingStyle.stroke
@@ -118,6 +119,7 @@ class _MemePreviewState extends State<MemePreview> {
                     Align(
                       alignment: Alignment.bottomCenter,
                       child: ProportionalFontSizeBuilder(
+                        baseFontSize: 24,
                         builder: (context, fontSize) {
                           return TextFormField(
                             controller: widget.textController,
@@ -131,7 +133,7 @@ class _MemePreviewState extends State<MemePreview> {
                             maxLines: 4,
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              fontFamily: 'Impact',
+                              fontFamily: 'Lithos',
                               fontSize: fontSize,
                               color: Colors.white,
                             ),

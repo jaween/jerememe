@@ -46,7 +46,7 @@ export class VideoEncoder {
       "-i",
       "pipe:0",
       "-vf",
-      `drawtext=fontfile=/usr/share/fonts/truetype/msttcorefonts/Impact.ttf:text='${escapedText}':fontcolor=white:fontsize=26:borderw=2:bordercolor=black:text_align=center:x=(w-text_w)/2:y=h-text_h-20`,
+      `drawtext=fontfile=/srv/server/lithos.ttf:text='${escapedText}':fontcolor=white:fontsize=24:borderw=2:bordercolor=black:text_align=center:x=(w-text_w)/2:y=h-text_h-20`,
       "-vcodec",
       "libwebp",
       "-lossless",

@@ -37,7 +37,7 @@ flutter:
   uses-material-design: true
 
   fonts:
-    - family: Impact
+    - family: Lithos
       fonts:
-        - asset: assets/fonts/impact.ttf
+        - asset: assets/fonts/lithos.ttf
           weight: 500
