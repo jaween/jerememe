@@ -131,8 +131,11 @@ class _RouterBuilderState extends State<_RouterBuilder> {
                     final api = ref.read(apiServiceProvider);
                     final pathWithLeadingSlash = state.uri.path;
                     final memeKey = pathWithLeadingSlash.substring(1);
+                    final id = memeKey.substring(2);
                     final url = api.urlForViewingKey(memeKey);
-                    return SelectionArea(child: ViewerPage(url: url));
+                    return SelectionArea(
+                      child: ViewerPage(id: id, url: url),
+                    );
                   },
                 );
               },
