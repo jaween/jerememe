@@ -31,7 +31,7 @@ class MediaMetadata {
 
 const mediaMetadata = [
   MediaMetadata(id: 'web00', title: 'Teaser'),
-  MediaMetadata(id: 'web01', title: 'Life of a Pro Gamer'),
+  MediaMetadata(id: 'web01', title: 'The Life of a Pro Gamer'),
   MediaMetadata(id: 'web02', title: 'Girls'),
   MediaMetadata(id: 'web03', title: 'FPS Doug'),
   MediaMetadata(id: 'web04', title: 'Pwn or Be Pwned'),
