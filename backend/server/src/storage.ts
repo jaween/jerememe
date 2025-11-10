@@ -34,7 +34,7 @@ export class S3Storage {
     return `public/${mediaId}/frames/${digest.substring(
       0,
       8
-    )}/${frameIndex}.jpg`;
+    )}/${frameIndex}.webp`;
   }
 
   public generateMemeKey(id: string): string {

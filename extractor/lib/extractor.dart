@@ -35,6 +35,10 @@ Future<List<Uint8List>> extractFrames({
     '24',
     '-f',
     'image2pipe',
+    '-vcodec',
+    'libwebp',
+    '-qscale',
+    '50',
     '-',
   ], mode: ProcessStartMode.normal);
   process.stderr.transform(const Utf8Decoder()).listen((_) {});

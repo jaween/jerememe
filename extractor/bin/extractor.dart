@@ -72,7 +72,9 @@ Future<void> _extract({
     skip < videoDuration;
     skip += extractDuration
   ) {
-    print('  Extracting frames $skip to ${(skip + extractDuration)}');
+    print(
+      '  Extracting frames from ${skip.inMinutes} mins to ${(skip + extractDuration).inMinutes} mins',
+    );
     final frames = await extractFrames(
       mediaId: metadata.id,
       videoPath: file.path,
@@ -95,7 +97,7 @@ Future<void> _extract({
               frameIndex: batchStartFrameIndex + batchOffset,
             ),
             data: frame,
-            contentType: 'image/jpeg',
+            contentType: 'image/webp',
           ),
       ]);
     }
@@ -118,5 +120,5 @@ String _generateS3FrameKey({required String mediaId, required int frameIndex}) {
   final base = '$mediaId/frames/$frameIndex';
   final bytes = utf8.encode(base);
   final digest = crypto.sha256.convert(bytes);
-  return 'public/$mediaId/frames/${digest.toString().substring(0, 8)}/$frameIndex.jpg';
+  return 'public/$mediaId/frames/${digest.toString().substring(0, 8)}/$frameIndex.webp';
 }
