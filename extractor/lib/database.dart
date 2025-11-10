@@ -71,7 +71,7 @@ class Database {
     _db.execute(
       '''
       INSERT INTO media (id, title, duration_seconds, duration_frames, resolution_width, resolution_height)
-      VALUES (?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         title = excluded.title,
         duration_seconds = excluded.duration_seconds,
