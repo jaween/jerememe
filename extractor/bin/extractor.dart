@@ -57,8 +57,15 @@ void main(List<String> arguments) async {
       database: database,
       metadata: metadata,
       mediaFile: videoFile,
-      subtitleFile: File(subtitlePath),
     );
+
+    final lines = await parseSrtFile(subtitlePath);
+    if (lines == null) {
+      print('Failed to extract subtitles');
+      return;
+    }
+    print('  Inserting ${lines.length} subtitle lines into database');
+    await database.addLines(mediaId: metadata.id, lines: lines);
   }
 }
 
@@ -67,17 +74,8 @@ Future<void> _extract({
   required Database database,
   required MediaMetadata metadata,
   required File mediaFile,
-  required File subtitleFile,
 }) async {
   print('Processing ${metadata.id}');
-
-  final lines = await parseSrtFile(subtitleFile.path);
-  if (lines == null) {
-    print('Failed to extract subtitles');
-    return;
-  }
-  print('  Inserting ${lines.length} subtitle lines into database');
-  await database.addLines(mediaId: metadata.id, lines: lines);
 
   const extractDuration = Duration(minutes: 1);
   final resolution = await getVideoResolution(mediaFile.path);
