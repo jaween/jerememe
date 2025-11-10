@@ -65,6 +65,7 @@ Future<void> _extract({
   await database.addLines(mediaId: metadata.id, lines: lines);
 
   const extractDuration = Duration(minutes: 1);
+  final resolution = await getVideoResolution(file.path);
   final videoDuration = await getVideoDuration(file.path);
   int frameCount = 0;
   for (
@@ -112,6 +113,7 @@ Future<void> _extract({
       metadata: metadata,
       duration: videoDuration,
       durationFrames: frameCount,
+      resolution: resolution,
     ),
   );
 }

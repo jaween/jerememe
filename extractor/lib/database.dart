@@ -15,7 +15,9 @@ class Database {
         id TEXT PRIMARY KEY,
         title TEXT NOT NULL,
         duration_seconds INTEGER NOT NULL,
-        duration_frames INTEGER NOT NULL
+        duration_frames INTEGER NOT NULL,
+        resolution_width INTEGER NOT NULL,
+        resolution_height INTEGER NOT NULL
       );
     ''');
 
@@ -68,14 +70,21 @@ class Database {
   Future<void> addMedia(Media media) async {
     _db.execute(
       '''
-      INSERT INTO media (id, title, duration_seconds, duration_frames)
+      INSERT INTO media (id, title, duration_seconds, duration_frames, resolution_width, resolution_height)
       VALUES (?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         title = excluded.title,
         duration_seconds = excluded.duration_seconds,
         duration_frames = excluded.duration_frames;
       ''',
-      [media.id, media.title, media.duration.inSeconds, media.durationFrames],
+      [
+        media.id,
+        media.title,
+        media.duration.inSeconds,
+        media.durationFrames,
+        media.resolution.width,
+        media.resolution.height,
+      ],
     );
   }
 

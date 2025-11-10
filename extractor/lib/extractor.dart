@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:extractor/media.dart';
 import 'package:extractor/subtitles.dart';
 
 Future<List<SubtitleLine>?> extractSubtitleLines(String videoPath) async {
@@ -51,6 +52,45 @@ Future<List<Uint8List>> extractFrames({
   await process.exitCode;
   print('  Extracted $frame frames');
   return output;
+}
+
+Future<Resolution> getVideoResolution(String videoPath) async {
+  final result = await Process.run('ffprobe', [
+    '-v',
+    'error',
+    '-select_streams',
+    'v:0',
+    '-show_entries',
+    'stream=width,height',
+    '-of',
+    'default=noprint_wrappers=1:nokey=1',
+    videoPath,
+  ]);
+
+  if (result.exitCode != 0) {
+    throw Exception(
+      'Failed to get video resolution. FFprobe exit code: ${result.exitCode}',
+    );
+  }
+
+  final output = result.stdout.trim().split('\n');
+
+  if (output.length < 2) {
+    throw Exception(
+      'Failed to parse video resolution from ffprobe output: ${result.stdout}',
+    );
+  }
+
+  final width = int.tryParse(output[0].trim());
+  final height = int.tryParse(output[1].trim());
+
+  if (width == null || height == null) {
+    throw Exception(
+      'Invalid resolution values received: Width=${output[0]}, Height=${output[1]}',
+    );
+  }
+
+  return Resolution(width, height);
 }
 
 Future<Duration> getVideoDuration(String videoPath) async {

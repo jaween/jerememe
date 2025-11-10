@@ -2,16 +2,24 @@ class Media {
   final MediaMetadata metadata;
   final Duration duration;
   final int durationFrames;
+  final Resolution resolution;
 
   Media({
     required this.metadata,
     required this.duration,
     required this.durationFrames,
+    required this.resolution,
   });
 
   String get id => metadata.id;
 
   String get title => metadata.title;
+}
+
+class Resolution {
+  final int width;
+  final int height;
+  Resolution(this.width, this.height);
 }
 
 class MediaMetadata {
