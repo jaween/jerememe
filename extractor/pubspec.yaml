@@ -11,6 +11,7 @@ dependencies:
   crypto: ^3.0.6
   dotenv: ^4.2.0
   path: ^1.9.1
+  retry: ^3.1.2
   sqlite3: ^2.9.3
 
 dev_dependencies:

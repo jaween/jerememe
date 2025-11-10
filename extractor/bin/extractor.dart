@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
 import 'package:crypto/crypto.dart' as crypto;
@@ -82,44 +83,47 @@ Future<void> _extract({
   final resolution = await getVideoResolution(mediaFile.path);
   final videoDuration = await getVideoDuration(mediaFile.path);
   int frameCount = 0;
+  List<Uint8List>? previousFrames;
+  final roundedUpTotalMinutes = (videoDuration.inSeconds / 60).ceil();
   for (
     Duration skip = Duration.zero;
     skip < videoDuration;
     skip += extractDuration
   ) {
-    print(
-      '  Extracting frames from ${skip.inMinutes} mins to ${(skip + extractDuration).inMinutes} mins',
-    );
-    final frames = await extractFrames(
+    final extractionFuture = extractFrames(
       mediaId: metadata.id,
       videoPath: mediaFile.path,
       skip: skip,
       duration: extractDuration,
     );
 
-    const uploadBatchSize = 24;
-    for (int f = 0; f < frames.length; f += uploadBatchSize) {
-      final batch = frames.skip(f).take(uploadBatchSize).toList();
-      final batchStartFrameIndex = frameCount + f;
-      print(
-        '  Uploading batch of $uploadBatchSize frames (${f + 1} / ${frames.length - 1})',
+    print(
+      '  Extracting frames from ${skip.inMinutes} mins to ${(skip + extractDuration).inMinutes} mins (out of $roundedUpTotalMinutes mins)',
+    );
+
+    if (previousFrames != null) {
+      await _uploadFrames(
+        s3: s3,
+        frames: previousFrames,
+        frameCount: frameCount,
+        mediaId: metadata.id,
       );
-      await Future.wait([
-        for (final (batchOffset, frame) in batch.indexed)
-          s3.upload(
-            key: _generateS3FrameKey(
-              mediaId: metadata.id,
-              frameIndex: batchStartFrameIndex + batchOffset,
-            ),
-            data: frame,
-            contentType: 'image/webp',
-          ),
-      ]);
+      frameCount += previousFrames.length;
     }
 
-    frameCount += frames.length;
+    previousFrames = await extractionFuture;
   }
-  print('  Running total uploaded: $frameCount frames');
+
+  // Final frames to upload
+  if (previousFrames != null) {
+    await _uploadFrames(
+      s3: s3,
+      frames: previousFrames,
+      frameCount: frameCount,
+      mediaId: metadata.id,
+    );
+    frameCount += previousFrames.length;
+  }
 
   print('  Inserting media info into database');
   await database.addMedia(
@@ -130,6 +134,33 @@ Future<void> _extract({
       resolution: resolution,
     ),
   );
+}
+
+Future<void> _uploadFrames({
+  required S3Storage s3,
+  required List<Uint8List> frames,
+  required int frameCount,
+  required String mediaId,
+}) async {
+  const uploadBatchSize = 48;
+  for (int f = 0; f < frames.length; f += uploadBatchSize) {
+    final batch = frames.skip(f).take(uploadBatchSize).toList();
+    final batchStartFrameIndex = frameCount + f;
+    print(
+      '  Uploading batch of $uploadBatchSize frames (${f + 1} / ${frames.length})',
+    );
+    await Future.wait([
+      for (final (batchOffset, frame) in batch.indexed)
+        s3.upload(
+          key: _generateS3FrameKey(
+            mediaId: mediaId,
+            frameIndex: batchStartFrameIndex + batchOffset,
+          ),
+          data: frame,
+          contentType: 'image/webp',
+        ),
+    ]);
+  }
 }
 
 String _generateS3FrameKey({required String mediaId, required int frameIndex}) {

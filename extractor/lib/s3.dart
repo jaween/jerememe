@@ -1,10 +1,11 @@
 import 'dart:typed_data';
-
 import 'package:aws_s3_api/s3-2006-03-01.dart' as aws;
+import 'package:retry/retry.dart';
 
 class S3Storage {
   late final aws.S3 _s3;
   final String _bucket;
+  final _retry = RetryOptions(maxAttempts: 3);
 
   S3Storage({
     required String accessKey,
@@ -24,11 +25,17 @@ class S3Storage {
     required Uint8List data,
     String? contentType,
   }) async {
-    await _s3.putObject(
-      bucket: _bucket,
-      key: key,
-      body: data,
-      contentType: contentType,
+    await _retry.retry(
+      () => _s3.putObject(
+        bucket: _bucket,
+        key: key,
+        body: data,
+        contentType: contentType,
+      ),
+      retryIf: (e) {
+        print('Error uploading to S3 ${e.toString()}');
+        return true;
+      },
     );
   }
 }
