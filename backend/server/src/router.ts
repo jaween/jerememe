@@ -76,7 +76,7 @@ export function router(
       body.endFrame
     );
 
-    send({ type: "progress", progress: 0.25 });
+    send({ type: "progress", progress: 0.4 });
     let encodingResult: EncodingResult;
     try {
       encodingResult = await videoEncoder.encode(frames, 24, body.text);
