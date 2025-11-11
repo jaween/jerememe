@@ -120,7 +120,7 @@ class _HomePageContentState extends ConsumerState<_HomePageContent> {
         itemBuilder: (context, index) {
           if (results.results.isEmpty) {
             return _SearchResultCardBorder(
-              child: SizedBox.expand()
+              child: ColoredBox(color: Colors.black)
                   .animate(onPlay: (controller) => controller.repeat())
                   .shimmer(
                     duration: const Duration(seconds: 1),
