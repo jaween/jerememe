@@ -87,7 +87,7 @@ export function router(
     }
 
     send({ type: "progress", progress: 0.8 });
-    const id = shortUUID.generate().substring(0, 8);
+    const id = `${shortUUID.generate().substring(0, 8)}.webp`;
     const key = storage.generateMemeKey(id);
     try {
       await storage.upload(key, encodingResult.data, encodingResult.mimeType);
