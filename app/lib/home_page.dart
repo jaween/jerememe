@@ -7,6 +7,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -36,7 +37,13 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     final results = ref.watch(searchRepositoryProvider).value;
     if (results == null) {
-      return SizedBox.shrink();
+      return Align(
+        alignment: Alignment.bottomCenter,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 16.0),
+          child: _AboutButton(),
+        ),
+      );
     }
     if (results.results.isEmpty && !results.searching) {
       return Center(
@@ -179,6 +186,19 @@ class _SearchResultCardBorder extends StatelessWidget {
         border: Border.all(color: Colors.grey),
       ),
       child: child,
+    );
+  }
+}
+
+class _AboutButton extends StatelessWidget {
+  const _AboutButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: () =>
+          launchUrl(Uri.parse('https://github.com/jaween/jerememe')),
+      child: Text('Source on GitHub', style: TextStyle(color: Colors.white12)),
     );
   }
 }
