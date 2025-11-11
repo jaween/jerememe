@@ -9,12 +9,13 @@ class ErrorPage extends StatelessWidget {
     return Scaffold(
       body: Center(
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Page not found'),
+            Text('sry 404 page liek not found n stuf'),
             const SizedBox(height: 32),
-            FilledButton(
-              onPressed: () => context.goNamed('init'),
-              child: Text('Go back'),
+            OutlinedButton(
+              onPressed: () => context.goNamed('home'),
+              child: Text('Back to home'),
             ),
           ],
         ),
