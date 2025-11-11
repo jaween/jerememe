@@ -39,10 +39,13 @@ class JerememeApp extends StatelessWidget {
     final baseTheme = ThemeData(
       colorScheme: colorScheme,
       scaffoldBackgroundColor: offBlack,
+      iconTheme: IconThemeData(color: Colors.white),
       inputDecorationTheme: InputDecorationTheme(
         border: OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(32)),
         ),
+        prefixIconColor: Colors.white54,
+        suffixIconColor: Colors.white,
         hintStyle: TextStyle(color: Colors.white54),
       ),
       filledButtonTheme: FilledButtonThemeData(
