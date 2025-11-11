@@ -42,46 +42,48 @@ class _HomePageState extends ConsumerState<HomePage> {
       return Center(child: Text('No results'));
     }
     final sidePadding = max(16.0, (MediaQuery.widthOf(context) - 1600) / 2);
-    return GridView.builder(
-      controller: _scrollController,
-      padding: EdgeInsets.only(
-        left: sidePadding,
-        right: sidePadding,
-        bottom: 16,
-      ),
-      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 400,
-        mainAxisSpacing: 16,
-        crossAxisSpacing: 16,
-        childAspectRatio: 4 / 3,
-      ),
-      itemCount: results.searching && results.results.isEmpty
-          ? 8
-          : results.results.length,
-      itemBuilder: (context, index) {
-        if (results.results.isEmpty) {
-          return _SearchResultCardBorder(
-            child: Shimmer(child: SizedBox.expand()),
+    return Scrollbar(
+      child: GridView.builder(
+        controller: _scrollController,
+        padding: EdgeInsets.only(
+          left: sidePadding,
+          right: sidePadding,
+          bottom: 16,
+        ),
+        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 400,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+          childAspectRatio: 4 / 3,
+        ),
+        itemCount: results.searching && results.results.isEmpty
+            ? 8
+            : results.results.length,
+        itemBuilder: (context, index) {
+          if (results.results.isEmpty) {
+            return _SearchResultCardBorder(
+              child: Shimmer(child: SizedBox.expand()),
+            );
+          }
+          final result = results.results[index];
+          return MouseRegion(
+            key: ValueKey('${result.mediaId}_${result.startFrame}'),
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              onTap: () {
+                context.pushNamed(
+                  'create',
+                  pathParameters: {
+                    'mediaId': result.mediaId,
+                    'frame': result.startFrame.toString(),
+                  },
+                );
+              },
+              child: SearchResultCard(result: result),
+            ),
           );
-        }
-        final result = results.results[index];
-        return MouseRegion(
-          key: ValueKey('${result.mediaId}_${result.startFrame}'),
-          cursor: SystemMouseCursors.click,
-          child: GestureDetector(
-            onTap: () {
-              context.pushNamed(
-                'create',
-                pathParameters: {
-                  'mediaId': result.mediaId,
-                  'frame': result.startFrame.toString(),
-                },
-              );
-            },
-            child: SearchResultCard(result: result),
-          ),
-        );
-      },
+        },
+      ),
     );
   }
 
