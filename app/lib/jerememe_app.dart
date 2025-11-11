@@ -16,11 +16,14 @@ const pwnageRed = Color.fromRGBO(0x99, 0x01, 0x00, 1.0);
 const offBlack = Color.fromRGBO(0x06, 0x06, 0x06, 1.0);
 
 class JerememeApp extends StatelessWidget {
-  const JerememeApp({super.key});
+  final String? initialLocation;
+
+  const JerememeApp({super.key, this.initialLocation});
 
   @override
   Widget build(BuildContext context) {
     return _RouterBuilder(
+      initialLocation: initialLocation,
       navigatorObservers: [],
       builder: (context, router) {
         return MaterialApp.router(routerConfig: router, theme: _buildTheme());
@@ -58,11 +61,13 @@ class JerememeApp extends StatelessWidget {
 }
 
 class _RouterBuilder extends StatefulWidget {
+  final String? initialLocation;
   final List<NavigatorObserver> navigatorObservers;
   final Widget Function(BuildContext context, GoRouter router) builder;
 
   const _RouterBuilder({
     super.key,
+    this.initialLocation,
     this.navigatorObservers = const [],
     required this.builder,
   });
@@ -77,7 +82,7 @@ class _RouterBuilderState extends State<_RouterBuilder> {
   @override
   void initState() {
     super.initState();
-    _router = _initRouter(initialLocation: '/');
+    _router = _initRouter(initialLocation: widget.initialLocation ?? '/');
   }
 
   @override

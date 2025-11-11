@@ -27,7 +27,7 @@ void main() async {
   runApp(
     ProviderScope(
       overrides: [apiServiceProvider.overrideWithValue(apiService)],
-      child: const JerememeApp(),
+      child: JerememeApp(initialLocation: Uri.base.path),
     ),
   );
 }
