@@ -54,6 +54,23 @@ class JerememeApp extends StatelessWidget {
           ),
         ),
       ),
+      snackBarTheme: SnackBarThemeData(
+        width: 500,
+        backgroundColor: Colors.black,
+        behavior: SnackBarBehavior.floating,
+        contentTextStyle: TextStyle(color: Colors.white),
+        shape: RoundedRectangleBorder(
+          side: BorderSide(color: Colors.white),
+          borderRadius: BorderRadiusGeometry.all(Radius.circular(8)),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: Colors.black,
+        shape: RoundedRectangleBorder(
+          side: BorderSide(color: Colors.white),
+          borderRadius: BorderRadiusGeometry.all(Radius.circular(12)),
+        ),
+      ),
     );
     return baseTheme.copyWith(
       textTheme: GoogleFonts.rubikTextTheme(

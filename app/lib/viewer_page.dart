@@ -68,18 +68,9 @@ class _ViewerPageState extends State<ViewerPage> {
 
   void _copy(String url) {
     Clipboard.setData(ClipboardData(text: url));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        width: 500 - 16 * 2,
-        backgroundColor: Colors.black,
-        shape: RoundedRectangleBorder(
-          side: BorderSide(color: Colors.white),
-          borderRadius: BorderRadiusGeometry.all(Radius.circular(8)),
-        ),
-        content: Text('Link Copied', style: TextStyle(color: Colors.white)),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Link Copied')));
   }
 
   void _download(String url) async {
