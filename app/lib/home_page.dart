@@ -245,8 +245,10 @@ class _AboutButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TextButton(
-      onPressed: () =>
-          launchUrl(Uri.parse('https://github.com/jaween/jerememe')),
+      onPressed: () => launchUrl(
+        Uri.parse('https://github.com/jaween/jerememe'),
+        mode: LaunchMode.externalApplication,
+      ),
       child: Text('Source on GitHub', style: TextStyle(color: Colors.white12)),
     );
   }
