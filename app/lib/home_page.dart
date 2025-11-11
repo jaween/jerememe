@@ -53,10 +53,10 @@ class _HomePageState extends ConsumerState<HomePage> {
         maxCrossAxisExtent: 400,
         mainAxisSpacing: 16,
         crossAxisSpacing: 16,
-        childAspectRatio: 11 / 10,
+        childAspectRatio: 4 / 3,
       ),
       itemCount: results.searching && results.results.isEmpty
-          ? 10
+          ? 8
           : results.results.length,
       itemBuilder: (context, index) {
         if (results.results.isEmpty) {
@@ -109,13 +109,12 @@ class SearchResultCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _SearchResultCardBorder(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      child: Stack(
         children: [
-          AspectRatio(
-            aspectRatio: result.thumbnail.aspectRatio,
+          Positioned.fill(
             child: Image.network(
               result.thumbnail.url,
+              fit: BoxFit.cover,
               loadingBuilder: (context, child, loadingProgress) {
                 if (loadingProgress == null) {
                   return child;
@@ -124,10 +123,13 @@ class SearchResultCard extends StatelessWidget {
               },
             ),
           ),
-          SizedBox(height: 8),
-          SizedBox(
+          Positioned(
+            left: 0,
+            bottom: 0,
+            right: 0,
             height: 48,
-            child: Padding(
+            child: Container(
+              color: Colors.black,
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: Center(
                 child: Text(

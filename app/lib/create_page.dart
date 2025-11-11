@@ -436,6 +436,7 @@ class _FrameRangePickerState extends State<_FrameRangePicker> {
       child: ListView.builder(
         controller: _scrollController,
         padding: EdgeInsets.symmetric(horizontal: 16),
+        itemExtent: _itemHeight,
         itemCount: widget.frames.length,
         itemBuilder: (context, index) {
           final frame = widget.frames[index];
@@ -491,6 +492,7 @@ class _FrameRangePickerState extends State<_FrameRangePicker> {
                   aspectRatio: frame.thumbnail.aspectRatio,
                   child: Image.network(
                     frame.thumbnail.url,
+                    fit: BoxFit.cover,
                     loadingBuilder: (context, child, loadingProgress) {
                       return Shimmer(
                         enabled: loadingProgress != null,
