@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:app/repositories/search_repository.dart';
 import 'package:app/services/models/search.dart';
+import 'package:app/widgets/search_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -9,14 +10,61 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class HomePage extends ConsumerStatefulWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
-  ConsumerState<HomePage> createState() => _HomePageState();
+  State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends ConsumerState<HomePage> {
+class _HomePageState extends State<HomePage> {
+  final _searchTextController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchTextController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Consumer(
+            builder: (context, ref, child) {
+              return SearchField(
+                controller: _searchTextController,
+                autofocus: true,
+                onQuery: (query) {
+                  ref.read(searchQueryProvider.notifier).setQuery(query);
+                  context.goNamed('home');
+                },
+                onClear: () =>
+                    ref.read(searchQueryProvider.notifier).setQuery(''),
+              );
+            },
+          ),
+        ),
+        if (MediaQuery.widthOf(context) > 800)
+          SizedBox(height: 32)
+        else
+          SizedBox(height: 16),
+        Expanded(child: _HomePageContent()),
+      ],
+    );
+  }
+}
+
+class _HomePageContent extends ConsumerStatefulWidget {
+  const _HomePageContent({super.key});
+
+  @override
+  ConsumerState<_HomePageContent> createState() => _HomePageContentState();
+}
+
+class _HomePageContentState extends ConsumerState<_HomePageContent> {
   final _scrollController = ScrollController();
 
   @override
@@ -35,8 +83,9 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final searchQuery = ref.watch(searchQueryProvider);
     final results = ref.watch(searchRepositoryProvider).value;
-    if (results == null) {
+    if (results == null || searchQuery.isEmpty) {
       return Align(
         alignment: Alignment.bottomCenter,
         child: Padding(

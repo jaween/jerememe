@@ -1,12 +1,10 @@
 import 'package:app/create_page.dart';
 import 'package:app/error_page.dart';
 import 'package:app/home_page.dart';
-import 'package:app/repositories/search_repository.dart';
 import 'package:app/services/api_service.dart';
 import 'package:app/transition.dart';
 import 'package:app/viewer_page.dart';
 import 'package:app/widgets/app_logo.dart';
-import 'package:app/widgets/search_field.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -267,25 +265,10 @@ class _ShellState extends State<_Shell> {
                         ),
                     ],
                   ),
-                  if (hasSpace)
-                    Consumer(
-                      builder: (context, ref, child) {
-                        return SearchField(
-                          initialValue: ref.watch(searchQueryProvider),
-                          onQuery: (query) {
-                            ref
-                                .read(searchQueryProvider.notifier)
-                                .setQuery(query);
-                            context.goNamed('home');
-                          },
-                        );
-                      },
-                    ),
                 ],
               ),
             ),
           ),
-          if (hasSpace) SizedBox(height: 32),
           Expanded(child: widget.child),
         ],
       ),
