@@ -325,7 +325,7 @@ class _MemeColumnState extends ConsumerState<_MemeColumn> {
       case Left(:final value):
         showError(context: context, message: value);
       case Right(:final value):
-        context.pushNamed('viewer', pathParameters: {'id': value.data.id});
+        context.goNamed('viewer', pathParameters: {'id': value.data.id});
     }
   }
 }

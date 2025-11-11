@@ -4,6 +4,7 @@ import 'package:app/widgets/meme_display.dart';
 import 'package:app/widgets/share_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:web/web.dart' as web;
 
@@ -24,41 +25,52 @@ class _ViewerPageState extends State<ViewerPage> {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            MemeDisplay(url: widget.url),
-            SizedBox(height: 16),
             Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                TextButton.icon(
-                  onPressed: () => _copy(widget.url),
-                  label: Text('Copy Link'),
-                  icon: Icon(Icons.copy),
-                ),
-                SizedBox(height: 4),
-                TextButton.icon(
-                  onPressed: () => _download(widget.url),
-                  label: Text('Download'),
-                  icon: Icon(Icons.download),
-                ),
-                SizedBox(height: 4),
-                ShareBuilder(
-                  data: Data(url: widget.url),
-                  builder: (context, onShare) {
-                    if (onShare == null) {
-                      return SizedBox.shrink();
-                    }
-                    return TextButton.icon(
-                      onPressed: onShare,
-                      label: Text('Share Meme'),
-                      icon: Icon(Icons.ios_share),
-                    );
-                  },
+                MemeDisplay(url: widget.url),
+                SizedBox(height: 16),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextButton.icon(
+                      onPressed: () => _copy(widget.url),
+                      label: Text('Copy Link'),
+                      icon: Icon(Icons.copy),
+                    ),
+                    SizedBox(height: 4),
+                    TextButton.icon(
+                      onPressed: () => _download(widget.url),
+                      label: Text('Download'),
+                      icon: Icon(Icons.download),
+                    ),
+                    SizedBox(height: 4),
+                    ShareBuilder(
+                      data: Data(url: widget.url),
+                      builder: (context, onShare) {
+                        if (onShare == null) {
+                          return SizedBox.shrink();
+                        }
+                        return TextButton.icon(
+                          onPressed: onShare,
+                          label: Text('Share Meme'),
+                          icon: Icon(Icons.ios_share),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ],
+            ),
+            SizedBox(height: 64),
+            OutlinedButton(
+              onPressed: () => context.goNamed('home'),
+              child: Text('Back to home'),
             ),
           ],
         ),
