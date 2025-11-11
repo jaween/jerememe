@@ -1,11 +1,12 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:app/services/models/frame.dart';
 import 'package:app/widgets/proportional_font_size_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
-import 'package:shimmer_animation/shimmer_animation.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class MemePreview extends StatefulWidget {
   final List<Frame> frames;
@@ -72,76 +73,87 @@ class _MemePreviewState extends State<MemePreview> {
         }
         return AspectRatio(
           aspectRatio: widget.frames.first.thumbnail.aspectRatio,
-          child: Shimmer(
-            enabled: _loading,
-            child: MouseRegion(
-              cursor: SystemMouseCursors.text,
-              child: GestureDetector(
-                onTap: _textFieldFocusNode.requestFocus,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    _Playback(frames: widget.frames),
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: ExcludeFocus(
-                        child: IgnorePointer(
-                          child: ProportionalFontSizeBuilder(
-                            baseFontSize: 24,
-                            builder: (context, fontSize) {
-                              return TextFormField(
-                                controller: widget.textController,
-                                scrollPhysics: NeverScrollableScrollPhysics(),
-                                decoration: InputDecoration(
-                                  border: InputBorder.none,
-                                ),
-                                minLines: 1,
-                                maxLines: 4,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontFamily: 'Lithos',
-                                  fontSize: fontSize,
-                                  foreground: Paint()
-                                    ..style = PaintingStyle.stroke
-                                    ..strokeWidth = 4
-                                    ..color = Colors.black,
-                                ),
-                              );
-                            },
+          child: Builder(
+            builder: (context) {
+              final child = MouseRegion(
+                cursor: SystemMouseCursors.text,
+                child: GestureDetector(
+                  onTap: _textFieldFocusNode.requestFocus,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      _Playback(frames: widget.frames),
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: ExcludeFocus(
+                          child: IgnorePointer(
+                            child: ProportionalFontSizeBuilder(
+                              baseFontSize: 24,
+                              builder: (context, fontSize) {
+                                return TextFormField(
+                                  controller: widget.textController,
+                                  scrollPhysics: NeverScrollableScrollPhysics(),
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                  ),
+                                  minLines: 1,
+                                  maxLines: 4,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontFamily: 'Lithos',
+                                    fontSize: fontSize,
+                                    foreground: Paint()
+                                      ..style = PaintingStyle.stroke
+                                      ..strokeWidth = 4
+                                      ..color = Colors.black,
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: ProportionalFontSizeBuilder(
-                        baseFontSize: 24,
-                        builder: (context, fontSize) {
-                          return TextFormField(
-                            controller: widget.textController,
-                            focusNode: _textFieldFocusNode,
-                            inputFormatters: [CapitalizeTextInputFormatter()],
-                            textInputAction: TextInputAction.done,
-                            scrollPhysics: NeverScrollableScrollPhysics(),
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                            ),
-                            minLines: 1,
-                            maxLines: 4,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontFamily: 'Lithos',
-                              fontSize: fontSize,
-                              color: Colors.white,
-                            ),
-                          );
-                        },
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: ProportionalFontSizeBuilder(
+                          baseFontSize: 24,
+                          builder: (context, fontSize) {
+                            return TextFormField(
+                              controller: widget.textController,
+                              focusNode: _textFieldFocusNode,
+                              inputFormatters: [CapitalizeTextInputFormatter()],
+                              textInputAction: TextInputAction.done,
+                              scrollPhysics: NeverScrollableScrollPhysics(),
+                              decoration: InputDecoration(
+                                border: InputBorder.none,
+                              ),
+                              minLines: 1,
+                              maxLines: 4,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontFamily: 'Lithos',
+                                fontSize: fontSize,
+                                color: Colors.white,
+                              ),
+                            );
+                          },
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ),
+              );
+
+              if (!_loading) {
+                return child;
+              }
+              return child
+                  .animate(onPlay: (controller) => controller.repeat())
+                  .shimmer(
+                    duration: const Duration(seconds: 1),
+                    angle: 60 * (pi / 180),
+                  );
+            },
           ),
         );
       },

@@ -4,9 +4,9 @@ import 'package:app/repositories/search_repository.dart';
 import 'package:app/services/models/search.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shimmer_animation/shimmer_animation.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -62,7 +62,12 @@ class _HomePageState extends ConsumerState<HomePage> {
         itemBuilder: (context, index) {
           if (results.results.isEmpty) {
             return _SearchResultCardBorder(
-              child: Shimmer(child: SizedBox.expand()),
+              child: SizedBox.expand()
+                  .animate(onPlay: (controller) => controller.repeat())
+                  .shimmer(
+                    duration: const Duration(seconds: 1),
+                    angle: 60 * (pi / 180),
+                  ),
             );
           }
           final result = results.results[index];
@@ -121,7 +126,12 @@ class SearchResultCard extends StatelessWidget {
                 if (loadingProgress == null) {
                   return child;
                 }
-                return Shimmer(child: Container(color: Colors.grey.shade300));
+                return Container(color: Colors.grey.shade300)
+                    .animate(onPlay: (controller) => controller.repeat())
+                    .shimmer(
+                      duration: const Duration(seconds: 1),
+                      angle: 60 * (pi / 180),
+                    );
               },
             ),
           ),

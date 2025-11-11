@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:app/repositories/frames_repository.dart';
 import 'package:app/repositories/search_repository.dart';
 import 'package:app/services/api_service.dart';
@@ -6,9 +8,9 @@ import 'package:app/util.dart';
 import 'package:app/widgets/meme_preview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shimmer_animation/shimmer_animation.dart';
 
 const _itemHeight = 140.0;
 
@@ -213,6 +215,15 @@ class _MemeColumn extends ConsumerStatefulWidget {
 class _MemeColumnState extends ConsumerState<_MemeColumn> {
   final _uploadProgressNotifier = ValueNotifier<double>(0);
   bool _creating = false;
+  bool _autofocus = true;
+
+  @override
+  void didUpdateWidget(covariant _MemeColumn oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.range != widget.range) {
+      _autofocus = false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -221,23 +232,30 @@ class _MemeColumnState extends ConsumerState<_MemeColumn> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Flexible(
-          child: Shimmer(
-            enabled: widget.frames is AsyncLoading,
-            child: Builder(
-              builder: (context) {
-                return switch (widget.frames) {
-                  AsyncLoading() => SizedBox.shrink(),
-                  AsyncError(:final error) => Center(
-                    child: Text(error.toString()),
-                  ),
-                  AsyncData(:final value) => MemePreview(
-                    key: ValueKey(widget.range.hashCode),
-                    textController: widget.textController,
-                    frames: value.selectedFrames(widget.range).toList(),
-                  ),
-                };
-              },
-            ),
+          child: Builder(
+            builder: (context) {
+              final child = switch (widget.frames) {
+                AsyncLoading() => SizedBox.shrink(),
+                AsyncError(:final error) => Center(
+                  child: Text(error.toString()),
+                ),
+                AsyncData(:final value) => MemePreview(
+                  key: ValueKey(widget.range.hashCode),
+                  autofocus: _autofocus,
+                  textController: widget.textController,
+                  frames: value.selectedFrames(widget.range).toList(),
+                ),
+              };
+              if (widget.frames is! AsyncLoading) {
+                return child;
+              }
+              return child
+                  .animate(onPlay: (controller) => controller.repeat())
+                  .shimmer(
+                    duration: const Duration(seconds: 1),
+                    angle: 60 * (pi / 180),
+                  );
+            },
           ),
         ),
         SizedBox(height: 8),
@@ -336,7 +354,12 @@ class _FramesColumn extends StatelessWidget {
         itemBuilder: (context, index) {
           return _FrameContainer(
             aspectRatio: 480 / 360,
-            child: Shimmer(child: Container(color: Colors.black)),
+            child: Container(color: Colors.black)
+                .animate(onPlay: (controller) => controller.repeat())
+                .shimmer(
+                  duration: const Duration(seconds: 1),
+                  angle: 60 * (pi / 180),
+                ),
           );
         },
       ),
@@ -494,11 +517,15 @@ class _FrameRangePickerState extends State<_FrameRangePicker> {
                     frame.thumbnail.url,
                     fit: BoxFit.cover,
                     loadingBuilder: (context, child, loadingProgress) {
-                      return Shimmer(
-                        enabled: loadingProgress != null,
-                        duration: Duration(seconds: 1),
-                        child: child,
-                      );
+                      if (loadingProgress == null) {
+                        return child;
+                      }
+                      return child
+                          .animate(onPlay: (controller) => controller.repeat())
+                          .shimmer(
+                            duration: const Duration(seconds: 1),
+                            angle: 60 * (pi / 180),
+                          );
                     },
                   ),
                 ),
