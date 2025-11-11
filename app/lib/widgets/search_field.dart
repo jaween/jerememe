@@ -24,7 +24,7 @@ class SearchField extends StatelessWidget {
         textCapitalization: TextCapitalization.words,
         style: TextStyle(fontSize: 18),
         decoration: InputDecoration(
-          hintText: 'Search Pure Pwnage',
+          hintText: 'Search Pure Pwnage Episodes',
           prefixIcon: Padding(
             padding: const EdgeInsets.only(left: 20.0, right: 4),
             child: Icon(Icons.search),

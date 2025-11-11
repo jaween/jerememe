@@ -7,14 +7,14 @@ class AppLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: const EdgeInsets.only(top: 16, bottom: 10),
       child: ProportionalFontSizeBuilder(
         baseFontSize: 48,
         builder: (context, fontSize) {
           return Text(
             'JEREMEME',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: fontSize),
+            style: TextStyle(fontFamily: 'Lithos', fontSize: fontSize),
           );
         },
       ),

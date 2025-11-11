@@ -39,7 +39,9 @@ class _HomePageState extends ConsumerState<HomePage> {
       return SizedBox.shrink();
     }
     if (results.results.isEmpty && !results.searching) {
-      return Center(child: Text('No results'));
+      return Center(
+        child: Text('No results', style: TextTheme.of(context).titleLarge),
+      );
     }
     final sidePadding = max(16.0, (MediaQuery.widthOf(context) - 1600) / 2);
     return Scrollbar(
