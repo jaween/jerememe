@@ -63,6 +63,12 @@ export function router(
       return res.end();
     }
 
+    const frameCount = body.endFrame - body.startFrame;
+    if (frameCount > 240) {
+      send({ type: "error", message: "Maximum duration is 10 seconds" });
+      return res.end();
+    }
+
     send({ type: "progress", progress: 0.05 });
     const frames = await datastore.fetchFrameRange(
       body.mediaId,
@@ -76,7 +82,7 @@ export function router(
       encodingResult = await videoEncoder.encode(frames, 24, body.text);
     } catch (e) {
       console.error(e);
-      send({ type: "error", message: "Encoding failed" });
+      send({ type: "error", message: "Unable to make animation" });
       return res.end();
     }
 
@@ -86,7 +92,7 @@ export function router(
     try {
       await storage.upload(key, encodingResult.data, encodingResult.mimeType);
     } catch {
-      send({ type: "error", message: "Upload failed" });
+      send({ type: "error", message: "Unable to save animation to cloud" });
       return res.end();
     }
 

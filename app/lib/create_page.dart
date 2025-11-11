@@ -366,8 +366,16 @@ class _FramesColumn extends StatelessWidget {
       AsyncError(:final error) => Center(child: Text(error.toString())),
       AsyncData(:final value) => _FrameRangePicker(
         range: range,
-        onRangeChanged: (range) =>
-            onRangeChanged(range, value.selectedFrames(range).toList()),
+        onRangeChanged: (range) {
+          final frameCount = range.endFrame - range.startFrame;
+          if (frameCount > 240) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Maximum length is 10 seconds')),
+            );
+          } else {
+            onRangeChanged(range, value.selectedFrames(range).toList());
+          }
+        },
         frames: value.frames,
         isFetchingStart: value.isFetchingStart,
         isFetchingEnd: value.isFetchingEnd,
