@@ -127,8 +127,8 @@ Future<void> _extract({
   await database.addMedia(
     Media(
       metadata: metadata,
-      duration: videoDuration,
-      durationFrames: frameCount,
+      duration: Duration(seconds: metadata.durationSeconds),
+      durationFrames: metadata.durationFrames,
       resolution: resolution,
     ),
   );
