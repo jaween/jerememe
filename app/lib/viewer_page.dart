@@ -93,7 +93,7 @@ class _ViewerPageState extends State<ViewerPage> {
     final bas64Encoded = base64Encode(response.bodyBytes);
     final href =
         'data:application/octet-stream;charset=utf-16le;base64,$bas64Encoded';
-    final filename = 'pp_meme_${widget.id}.webp';
+    final filename = 'pp_meme_${widget.id}';
     web.HTMLAnchorElement()
       ..href = href
       ..download = filename
