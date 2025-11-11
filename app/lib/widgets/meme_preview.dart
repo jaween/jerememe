@@ -88,8 +88,7 @@ class _MemePreviewState extends State<MemePreview> {
                                   decoration: InputDecoration(
                                     border: InputBorder.none,
                                   ),
-                                  minLines: 1,
-                                  maxLines: 4,
+                                  maxLines: null,
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     fontFamily: 'Lithos',
@@ -119,8 +118,7 @@ class _MemePreviewState extends State<MemePreview> {
                               decoration: InputDecoration(
                                 border: InputBorder.none,
                               ),
-                              minLines: 1,
-                              maxLines: 4,
+                              maxLines: null,
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontFamily: 'Lithos',
