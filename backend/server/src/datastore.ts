@@ -232,6 +232,7 @@ export class Datastore {
       WHERE media_id = ? 
         AND start_frame <= ? 
         AND end_frame >= ?
+      ORDER BY start_frame DESC
       LIMIT 1;
     `;
       this.db.get(sql, [mediaId, frameIndex, frameIndex], (error, row: any) => {
