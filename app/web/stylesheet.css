@@ -1,0 +1,26 @@
+@font-face {
+  font-family: "Lithos";
+  src: url("assets/lithos.ttf") format("truetype");
+}
+
+body {
+  background-color: #060606;
+  margin: 0;
+  padding: 0;
+}
+
+#logo-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+#loading-text {
+  font-family: "Lithos", sans-serif;
+  color: white;
+  margin-top: 20px;
+  font-size: 24px;
+  letter-spacing: 2px;
+}
