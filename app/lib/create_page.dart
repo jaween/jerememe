@@ -235,7 +235,10 @@ class _MemeColumnState extends ConsumerState<_MemeColumn> {
           child: Builder(
             builder: (context) {
               final child = switch (widget.frames) {
-                AsyncLoading() => SizedBox.shrink(),
+                AsyncLoading() => AspectRatio(
+                  aspectRatio: 480 / 360,
+                  child: Container(color: Colors.black),
+                ),
                 AsyncError(:final error) => Center(
                   child: Text(error.toString()),
                 ),
@@ -352,14 +355,16 @@ class _FramesColumn extends StatelessWidget {
       AsyncLoading() => ListView.builder(
         padding: EdgeInsets.symmetric(horizontal: 16),
         itemBuilder: (context, index) {
-          return _FrameContainer(
-            aspectRatio: 480 / 360,
-            child: Container(color: Colors.black)
-                .animate(onPlay: (controller) => controller.repeat())
-                .shimmer(
-                  duration: const Duration(seconds: 1),
-                  angle: 60 * (pi / 180),
-                ),
+          return Center(
+            child: _FrameContainer(
+              aspectRatio: 480 / 360,
+              child: Container(color: Colors.black)
+                  .animate(onPlay: (controller) => controller.repeat())
+                  .shimmer(
+                    duration: const Duration(seconds: 1),
+                    angle: 60 * (pi / 180),
+                  ),
+            ),
           );
         },
       ),
