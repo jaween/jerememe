@@ -3,6 +3,7 @@ import 'package:app/error_page.dart';
 import 'package:app/home_page.dart';
 import 'package:app/repositories/search_repository.dart';
 import 'package:app/services/api_service.dart';
+import 'package:app/transition.dart';
 import 'package:app/viewer_page.dart';
 import 'package:app/widgets/app_logo.dart';
 import 'package:app/widgets/search_field.dart';
@@ -109,19 +110,23 @@ class _RouterBuilderState extends State<_RouterBuilder> {
             GoRoute(
               path: '/',
               name: 'home',
-              builder: (context, state) {
-                return SelectionArea(child: HomePage());
+              pageBuilder: (context, state) {
+                return TopLevelTransitionPage(
+                  child: SelectionArea(child: HomePage()),
+                );
               },
               routes: [
                 GoRoute(
                   path: 'create/:mediaId/:frame',
                   name: 'create',
-                  builder: (context, state) {
+                  pageBuilder: (context, state) {
                     final mediaId = state.pathParameters['mediaId'] as String;
                     final frameString = state.pathParameters['frame'] as String;
                     final frame = int.tryParse(frameString) ?? 0;
-                    return SelectionArea(
-                      child: CreatePage(mediaId: mediaId, frameIndex: frame),
+                    return TopLevelTransitionPage(
+                      child: SelectionArea(
+                        child: CreatePage(mediaId: mediaId, frameIndex: frame),
+                      ),
                     );
                   },
                 ),
@@ -130,18 +135,20 @@ class _RouterBuilderState extends State<_RouterBuilder> {
             GoRoute(
               path: '/m/:id',
               name: 'viewer',
-              builder: (context, state) {
-                return Consumer(
-                  builder: (context, ref, child) {
-                    final api = ref.read(apiServiceProvider);
-                    final pathWithLeadingSlash = state.uri.path;
-                    final memeKey = pathWithLeadingSlash.substring(1);
-                    final id = memeKey.substring(2);
-                    final url = api.urlForViewingKey(memeKey);
-                    return SelectionArea(
-                      child: ViewerPage(id: id, url: url),
-                    );
-                  },
+              pageBuilder: (context, state) {
+                return TopLevelTransitionPage(
+                  child: Consumer(
+                    builder: (context, ref, child) {
+                      final api = ref.read(apiServiceProvider);
+                      final pathWithLeadingSlash = state.uri.path;
+                      final memeKey = pathWithLeadingSlash.substring(1);
+                      final id = memeKey.substring(2);
+                      final url = api.urlForViewingKey(memeKey);
+                      return SelectionArea(
+                        child: ViewerPage(id: id, url: url),
+                      );
+                    },
+                  ),
                 );
               },
             ),
@@ -214,7 +221,17 @@ class _ShellState extends State<_Shell> {
                             },
                           ),
                         ),
-                      Expanded(child: AppLogo()),
+                      Expanded(
+                        child: Center(
+                          child: MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            child: GestureDetector(
+                              onTap: () => context.goNamed('home'),
+                              child: AppLogo(),
+                            ),
+                          ),
+                        ),
+                      ),
                       // Used to balance logo (stays vertically centered)
                       if (_canPop)
                         Align(
