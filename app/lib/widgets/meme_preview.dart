@@ -208,6 +208,7 @@ class _PlaybackState extends State<_Playback>
     return Image.network(
       widget.frames[frameIndex].thumbnail.url,
       fit: BoxFit.contain,
+      gaplessPlayback: true,
     );
   }
 }
