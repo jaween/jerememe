@@ -29,12 +29,6 @@ class _MemePreviewState extends State<MemePreview> {
   bool _hasCached = false;
 
   @override
-  void initState() {
-    super.initState();
-    _textFieldFocusNode.requestFocus();
-  }
-
-  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_hasCached) {
@@ -54,11 +48,13 @@ class _MemePreviewState extends State<MemePreview> {
     }
     setState(() => _loading = false);
 
-    await WidgetsBinding.instance.endOfFrame;
-    if (!mounted) {
-      return;
+    if (widget.autofocus) {
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted) {
+        return;
+      }
+      _textFieldFocusNode.requestFocus();
     }
-    _textFieldFocusNode.requestFocus();
   }
 
   @override
@@ -125,6 +121,7 @@ class _MemePreviewState extends State<MemePreview> {
                             controller: widget.textController,
                             focusNode: _textFieldFocusNode,
                             inputFormatters: [CapitalizeTextInputFormatter()],
+                            textInputAction: TextInputAction.done,
                             scrollPhysics: NeverScrollableScrollPhysics(),
                             decoration: InputDecoration(
                               border: InputBorder.none,
