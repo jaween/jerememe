@@ -118,26 +118,77 @@ String _formatFfmpegTime(Duration duration) {
 }
 
 List<SubtitleLine> _parseSrt(String srt) {
-  final regex = RegExp(
-    r'(\d+)\s+(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})\s+([\s\S]*?)(?=\n{2,}|\s*$)',
-  );
-
-  final matches = regex.allMatches(srt);
+  srt = srt.replaceFirst('\uFEFF', '');
+  srt = srt.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
 
   final lines = <SubtitleLine>[];
-  for (final match in matches) {
-    final index = int.parse(match.group(1)!);
-    final start = _parseSrtTime(match.group(2)!);
-    final end = _parseSrtTime(match.group(3)!);
-    var text = match.group(4)!.replaceAll('\n', ' ').trim();
+  final blocks = <String>[];
+
+  final allLines = srt.split('\n');
+  final currentBlock = StringBuffer();
+
+  for (int i = 0; i < allLines.length; i++) {
+    final line = allLines[i];
+
+    if (line.trim().isNotEmpty) {
+      currentBlock.writeln(line);
+    } else if (currentBlock.isNotEmpty) {
+      blocks.add(currentBlock.toString().trim());
+      currentBlock.clear();
+    }
+  }
+
+  if (currentBlock.isNotEmpty) {
+    blocks.add(currentBlock.toString().trim());
+  }
+
+  for (final block in blocks) {
+    if (block.isEmpty) {
+      continue;
+    }
+
+    final blockLines = block.split('\n');
+    if (blockLines.length < 3) {
+      continue;
+    }
+
+    final index = int.tryParse(blockLines[0].trim());
+    if (index == null) {
+      continue;
+    }
+
+    final timeLine = blockLines[1];
+    final timeMatch = RegExp(
+      r'(\d{2}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2},\d{3})',
+    ).firstMatch(timeLine);
+    if (timeMatch == null) {
+      continue;
+    }
+
+    final start = _parseSrtTime(timeMatch.group(1)!);
+    final end = _parseSrtTime(timeMatch.group(2)!);
+    final textLines = blockLines.sublist(2);
+
+    var text = textLines
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .join(' ')
+        .replaceAll(RegExp(r'<[^>]+>'), '')
+        .trim();
+
     if (text.startsWith('- ')) {
       text = text.substring(2);
     }
 
-    const frameInterval = Duration(microseconds: 41667);
-    int startFrame = (start.inMicroseconds / frameInterval.inMicroseconds)
+    if (text.isEmpty) {
+      continue;
+    }
+
+    const frameInterval = Duration(microseconds: 41708);
+    final startFrame = (start.inMicroseconds / frameInterval.inMicroseconds)
         .floor();
-    int endFrame = (end.inMicroseconds / frameInterval.inMicroseconds).ceil();
+    final endFrame = (end.inMicroseconds / frameInterval.inMicroseconds).ceil();
+
     lines.add(
       SubtitleLine(
         index: index,
@@ -147,6 +198,7 @@ List<SubtitleLine> _parseSrt(String srt) {
       ),
     );
   }
+
   return lines;
 }
 
