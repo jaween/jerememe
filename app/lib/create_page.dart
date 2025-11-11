@@ -215,15 +215,6 @@ class _MemeColumn extends ConsumerStatefulWidget {
 class _MemeColumnState extends ConsumerState<_MemeColumn> {
   final _uploadProgressNotifier = ValueNotifier<double>(0);
   bool _creating = false;
-  bool _autofocus = true;
-
-  @override
-  void didUpdateWidget(covariant _MemeColumn oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.range != widget.range) {
-      _autofocus = false;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -244,7 +235,6 @@ class _MemeColumnState extends ConsumerState<_MemeColumn> {
                 ),
                 AsyncData(:final value) => MemePreview(
                   key: ValueKey(widget.range.hashCode),
-                  autofocus: _autofocus,
                   textController: widget.textController,
                   frames: value.selectedFrames(widget.range).toList(),
                 ),

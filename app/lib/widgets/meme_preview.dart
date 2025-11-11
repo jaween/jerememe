@@ -48,14 +48,6 @@ class _MemePreviewState extends State<MemePreview> {
       return;
     }
     setState(() => _loading = false);
-
-    if (widget.autofocus) {
-      await WidgetsBinding.instance.endOfFrame;
-      if (!mounted) {
-        return;
-      }
-      _textFieldFocusNode.requestFocus();
-    }
   }
 
   @override
