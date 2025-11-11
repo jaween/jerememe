@@ -43,6 +43,7 @@ class JerememeApp extends StatelessWidget {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(32)),
         ),
+        hintStyle: TextStyle(color: Colors.white54),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
