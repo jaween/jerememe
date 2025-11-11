@@ -1,7 +1,10 @@
 import { spawn } from "child_process";
-import { Readable } from "stream";
 import { Frame } from "./datastore";
 import axios from "axios";
+import * as fs from "fs";
+import * as os from "os";
+import path from "path";
+import shortUUID from "short-uuid";
 
 export class VideoEncoder {
   public async encode(
@@ -13,59 +16,57 @@ export class VideoEncoder {
       throw new Error("No frames provided.");
     }
 
-    const buffers = await Promise.all(
-      frames.map(async (f) => {
+    const tempUuid = shortUUID.generate();
+    const inputFiles = await Promise.all(
+      frames.map(async (f, index) => {
         const res = await axios.get<ArrayBuffer>(f.thumbnail.url, {
           responseType: "arraybuffer",
         });
-        return Buffer.from(res.data);
+        const webpBuffer = Buffer.from(res.data);
+        const tempFilePath = path.join(
+          os.tmpdir(),
+          `${tempUuid}_${index}.webp`
+        );
+        fs.writeFileSync(tempFilePath, webpBuffer);
+        return tempFilePath;
       })
     );
+    console.info("[VideoEncoder] Images fetched");
 
-    const inputStream = new Readable({
-      read() {
-        for (const buffer of buffers) {
-          this.push(buffer);
-        }
-        this.push(null);
-      },
-    });
+    const subsPath = path.join(os.tmpdir(), `${tempUuid}.srt`);
+    fs.writeFileSync(subsPath, this.textToSrt(text));
 
-    const escapedText = this.ffmpegEscape(text);
-    const isSingleFrame = buffers.length === 1;
+    const isSingleFrame = inputFiles.length === 1;
+    const outputFilePath = path.join(os.tmpdir(), `${tempUuid}.webp`);
     const ffmpegArgs = [
       "-hide_banner",
       "-loglevel",
       "error",
-      "-f",
-      "image2pipe",
-      "-vcodec",
-      "mjpeg",
-      "-r",
-      frameRate.toString(),
-      "-i",
-      "pipe:0",
-      "-vf",
-      `drawtext=fontfile=/srv/server/lithos.ttf:text='${escapedText}':fontcolor=white:fontsize=24:borderw=2:bordercolor=black:text_align=center:x=(w-text_w)/2:y=h-text_h-20`,
-      "-vcodec",
+      ...inputFiles.flatMap((file) => ["-i", file]),
+      "-fps_mode",
+      "passthrough",
+      "-filter_complex",
+      `concat=n=${inputFiles.length}:v=1:a=0[v]; \
+      [v]settb=AVTB,setpts=N/${frameRate}/TB,fps=${frameRate}[v2]; \
+      [v2]subtitles=${subsPath}:fontsdir=/srv/server:force_style='FontName=Lithos,FontSize=22,MarginL=0,MarginR=0,Alignment=2,PrimaryColour=&HFFFFFF&,OutlineColour=&H000000&,BorderStyle=1,Outline=2'[out]`,
+      "-map",
+      "[out]",
+      "-c:v",
       "libwebp",
+      "-loop",
+      "0",
       "-lossless",
-      "1",
-      "-qscale",
-      "75",
-      "-preset",
-      "default",
+      "0",
+      "-q:v",
+      "30",
       "-an",
-      "-f",
-      "webp",
-      "pipe:1",
+      outputFilePath,
     ];
 
     const ffmpeg = spawn("ffmpeg", ffmpegArgs);
-    inputStream.pipe(ffmpeg.stdin);
-
-    const chunks: Buffer[] = [];
-    ffmpeg.stdout.on("data", (chunk) => chunks.push(chunk));
+    ffmpeg.stderr.on("data", (data) => {
+      console.error(`stderr: ${data}`);
+    });
 
     return new Promise<EncodingResult>((resolve, reject) => {
       ffmpeg.on("error", reject);
@@ -73,8 +74,10 @@ export class VideoEncoder {
         if (code !== 0) {
           return reject(new Error(`ffmpeg exited with ${code}`));
         }
+        const result = fs.readFileSync(outputFilePath);
+
         resolve({
-          data: Buffer.concat(chunks),
+          data: result,
           mimeType: "image/webp",
           isVideo: !isSingleFrame,
         });
@@ -82,12 +85,8 @@ export class VideoEncoder {
     });
   }
 
-  private ffmpegEscape(text: string): string {
-    return text
-      .replace(/\\/g, "\\\\")
-      .replace(/'/g, "\\'")
-      .replace(/:/g, "\\:")
-      .replace(/%/g, "\\%");
+  private textToSrt(text: String) {
+    return `1\n00:00:00,000 --> 00:00:20,000\n${text}\n`;
   }
 }
 
