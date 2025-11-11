@@ -200,6 +200,7 @@ class _ShellState extends State<_Shell> {
 
   @override
   Widget build(BuildContext context) {
+    final hasSpace = MediaQuery.widthOf(context) >= 800 || !_canPop;
     return Scaffold(
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -249,7 +250,7 @@ class _ShellState extends State<_Shell> {
                         ),
                     ],
                   ),
-                  if (MediaQuery.widthOf(context) >= 800 || !_canPop)
+                  if (hasSpace)
                     Consumer(
                       builder: (context, ref, child) {
                         return SearchField(
@@ -267,7 +268,7 @@ class _ShellState extends State<_Shell> {
               ),
             ),
           ),
-          SizedBox(height: 32),
+          if (hasSpace) SizedBox(height: 32),
           Expanded(child: widget.child),
         ],
       ),
