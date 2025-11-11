@@ -11,8 +11,8 @@ class TopLevelTransitionPage<T> extends CustomTransitionPage<T> {
     super.key,
   }) : super(
          transitionsBuilder: _transitionsBuilder,
-         transitionDuration: const Duration(milliseconds: 300),
-         reverseTransitionDuration: const Duration(milliseconds: 300),
+         transitionDuration: Duration.zero,
+         reverseTransitionDuration: Duration.zero,
        );
 
   static Widget _transitionsBuilder(
