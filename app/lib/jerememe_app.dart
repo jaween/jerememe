@@ -56,7 +56,9 @@ class JerememeApp extends StatelessWidget {
       ),
     );
     return baseTheme.copyWith(
-      textTheme: GoogleFonts.rubikTextTheme(baseTheme.textTheme).apply(),
+      textTheme: GoogleFonts.rubikTextTheme(
+        baseTheme.textTheme,
+      ).apply(bodyColor: Colors.white),
     );
   }
 }
@@ -247,19 +249,20 @@ class _ShellState extends State<_Shell> {
                         ),
                     ],
                   ),
-                  Consumer(
-                    builder: (context, ref, child) {
-                      return SearchField(
-                        initialValue: ref.watch(searchQueryProvider),
-                        onQuery: (query) {
-                          ref
-                              .read(searchQueryProvider.notifier)
-                              .setQuery(query);
-                          context.goNamed('home');
-                        },
-                      );
-                    },
-                  ),
+                  if (MediaQuery.widthOf(context) >= 800 || !_canPop)
+                    Consumer(
+                      builder: (context, ref, child) {
+                        return SearchField(
+                          initialValue: ref.watch(searchQueryProvider),
+                          onQuery: (query) {
+                            ref
+                                .read(searchQueryProvider.notifier)
+                                .setQuery(query);
+                            context.goNamed('home');
+                          },
+                        );
+                      },
+                    ),
                 ],
               ),
             ),

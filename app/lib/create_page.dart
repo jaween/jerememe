@@ -240,7 +240,7 @@ class _MemeColumnState extends ConsumerState<_MemeColumn> {
             ),
           ),
         ),
-        SizedBox(height: 16),
+        SizedBox(height: 8),
         Align(
           alignment: Alignment.centerRight,
           child: ValueListenableBuilder(
@@ -256,7 +256,7 @@ class _MemeColumnState extends ConsumerState<_MemeColumn> {
             },
           ),
         ),
-        SizedBox(height: 32),
+        SizedBox(height: 8),
         SizedBox(
           width: double.infinity,
           height: 50,
