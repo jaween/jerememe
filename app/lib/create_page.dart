@@ -112,6 +112,7 @@ class _CreatePageState extends ConsumerState<CreatePage> {
                         setState(() => _range = range);
                         _textController.text = _createCaption(frames);
                       },
+                      center: true,
                       onFetchStart: ref.read(_provider.notifier).fetchStart,
                       onFetchEnd: ref.read(_provider.notifier).fetchEnd,
                     ),
@@ -134,19 +135,17 @@ class _CreatePageState extends ConsumerState<CreatePage> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                SizedBox(
-                  width: 232,
-                  child: _FramesColumn(
-                    key: _framesColumnKey,
-                    frames: _reducedFrames,
-                    range: _range,
-                    onRangeChanged: (range, frames) {
-                      setState(() => _range = range);
-                      _textController.text = _createCaption(frames);
-                    },
-                    onFetchStart: ref.read(_provider.notifier).fetchStart,
-                    onFetchEnd: ref.read(_provider.notifier).fetchEnd,
-                  ),
+                _FramesColumn(
+                  key: _framesColumnKey,
+                  frames: _reducedFrames,
+                  range: _range,
+                  onRangeChanged: (range, frames) {
+                    setState(() => _range = range);
+                    _textController.text = _createCaption(frames);
+                  },
+                  center: false,
+                  onFetchStart: ref.read(_provider.notifier).fetchStart,
+                  onFetchEnd: ref.read(_provider.notifier).fetchEnd,
                 ),
                 Expanded(
                   child: Center(
@@ -313,6 +312,7 @@ class _FramesColumn extends StatelessWidget {
   final AsyncValue<Frames> frames;
   final _FrameRange range;
   final void Function(_FrameRange range, List<Frame> frames) onRangeChanged;
+  final bool center;
   final VoidCallback onFetchStart;
   final VoidCallback onFetchEnd;
 
@@ -321,6 +321,7 @@ class _FramesColumn extends StatelessWidget {
     required this.frames,
     required this.range,
     required this.onRangeChanged,
+    required this.center,
     required this.onFetchStart,
     required this.onFetchEnd,
   });
@@ -328,40 +329,49 @@ class _FramesColumn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (frames) {
-      AsyncLoading() => ListView.builder(
-        padding: EdgeInsets.symmetric(horizontal: 16),
-        itemBuilder: (context, index) {
-          return Center(
-            child: _FrameContainer(
-              aspectRatio: 480 / 360,
-              child: Container(color: Colors.black)
-                  .animate(onPlay: (controller) => controller.repeat())
-                  .shimmer(
-                    duration: const Duration(seconds: 1),
-                    angle: 60 * (pi / 180),
-                  ),
-            ),
-          );
-        },
+      AsyncLoading() => SizedBox(
+        width: 240,
+        child: ListView.builder(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          itemBuilder: (context, index) {
+            return Center(
+              child: _FrameContainer(
+                aspectRatio: 480 / 360,
+                child: Container(color: Colors.black)
+                    .animate(onPlay: (controller) => controller.repeat())
+                    .shimmer(
+                      duration: const Duration(seconds: 1),
+                      angle: 60 * (pi / 180),
+                    ),
+              ),
+            );
+          },
+        ),
       ),
       AsyncError(:final error) => Center(child: Text(error.toString())),
-      AsyncData(:final value) => _FrameRangePicker(
-        range: range,
-        onRangeChanged: (range) {
-          final frameCount = range.endFrame - range.startFrame;
-          if (frameCount > 240) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Maximum length is 10 seconds')),
-            );
-          } else {
-            onRangeChanged(range, value.selectedFrames(range).toList());
-          }
+      AsyncData(:final value) => LayoutBuilder(
+        builder: (context, constraints) {
+          return _FrameRangePicker(
+            range: range,
+            onRangeChanged: (range) {
+              final frameCount = range.endFrame - range.startFrame;
+              if (frameCount > 240) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Maximum length is 10 seconds')),
+                );
+              } else {
+                onRangeChanged(range, value.selectedFrames(range).toList());
+              }
+            },
+            center: center,
+            height: constraints.maxHeight,
+            frames: value.frames,
+            isFetchingStart: value.isFetchingStart,
+            isFetchingEnd: value.isFetchingEnd,
+            onFetchStart: onFetchStart,
+            onFetchEnd: onFetchEnd,
+          );
         },
-        frames: value.frames,
-        isFetchingStart: value.isFetchingStart,
-        isFetchingEnd: value.isFetchingEnd,
-        onFetchStart: onFetchStart,
-        onFetchEnd: onFetchEnd,
       ),
     };
   }
@@ -371,6 +381,8 @@ class _FrameRangePicker extends StatefulWidget {
   final _FrameRange range;
   final void Function(_FrameRange range) onRangeChanged;
   final List<Frame> frames;
+  final bool center;
+  final double height;
   final bool isFetchingStart;
   final bool isFetchingEnd;
   final VoidCallback onFetchStart;
@@ -381,6 +393,8 @@ class _FrameRangePicker extends StatefulWidget {
     required this.range,
     required this.onRangeChanged,
     required this.frames,
+    required this.center,
+    required this.height,
     required this.isFetchingStart,
     required this.isFetchingEnd,
     required this.onFetchStart,
@@ -392,34 +406,38 @@ class _FrameRangePicker extends StatefulWidget {
 }
 
 class _FrameRangePickerState extends State<_FrameRangePicker> {
-  final _scrollController = ScrollController();
-  bool _initialJumpDone = false;
+  late PageController _pageController = PageController(
+    viewportFraction: _itemHeight / widget.height,
+    initialPage: widget.frames.length ~/ 2,
+  );
+  bool _startEnabled = true;
+  bool _endEnabled = true;
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScrollUpdate);
-    _performInitialJumpNextFrame();
+    _pageController.addListener(_onScrollUpdate);
   }
 
   @override
   void didUpdateWidget(covariant _FrameRangePicker oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.height != widget.height) {
+      _pageController.dispose();
+      _pageController = PageController(
+        viewportFraction: _itemHeight / widget.height,
+        initialPage: widget.frames.length ~/ 2,
+      );
+      _pageController.addListener(_onScrollUpdate);
+    }
+    if (oldWidget.range != widget.range) {
+      _updateTrimButtonState();
+    }
+
     final oldFrames = oldWidget.frames;
     final newFrames = widget.frames;
     if (newFrames.length > oldFrames.length && oldFrames.isNotEmpty) {
       _maybeJumpDownToPreviousPosition(oldFrames, newFrames);
-    }
-  }
-
-  void _performInitialJumpNextFrame() async {
-    await WidgetsBinding.instance.endOfFrame;
-    if (mounted && _scrollController.hasClients) {
-      final viewport = _scrollController.position.viewportDimension;
-      _scrollController.jumpTo(
-        _itemHeight * widget.frames.length / 2 - viewport / 2,
-      );
-      setState(() => _initialJumpDone = true);
     }
   }
 
@@ -428,113 +446,189 @@ class _FrameRangePickerState extends State<_FrameRangePicker> {
     List<Frame> newFrames,
   ) {
     final insertedAtTop = newFrames.first.index != oldFrames.first.index;
-    if (insertedAtTop && _scrollController.hasClients) {
+    if (insertedAtTop && _pageController.hasClients) {
       final newFrameCount = newFrames.length - oldFrames.length;
-      final current = _scrollController.position.pixels;
-      _scrollController.jumpTo(current + _itemHeight * newFrameCount);
+      final current = _pageController.position.pixels;
+      _pageController.jumpTo(current + _itemHeight * newFrameCount);
     }
   }
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Opacity(
-      opacity: _initialJumpDone ? 1.0 : 0.0,
-      child: ListView.builder(
-        controller: _scrollController,
-        padding: EdgeInsets.symmetric(horizontal: 16),
-        itemExtent: _itemHeight,
-        itemCount: widget.frames.length,
-        itemBuilder: (context, index) {
-          final frame = widget.frames[index];
-          final selected =
-              frame.index >= widget.range.startFrame &&
-              frame.index <= widget.range.endFrame;
-          return Center(
-            key: ValueKey(frame.index.toString()),
-            child: MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: GestureDetector(
-                onTap: () {
-                  if (widget.range.startFrame == widget.range.endFrame &&
-                      frame.index == widget.range.startFrame) {
-                    return;
-                  }
-                  final closerToTop =
-                      (frame.index < widget.range.startFrame) ||
-                      ((frame.index - widget.range.startFrame).abs() <
-                          (frame.index - widget.range.endFrame).abs());
-                  if (frame.index == widget.range.startFrame) {
-                    widget.onRangeChanged(
-                      _FrameRange(
-                        startFrame: widget.frames[index + 1].index,
-                        endFrame: widget.range.endFrame,
-                      ),
-                    );
-                  } else if (frame.index == widget.range.endFrame) {
-                    widget.onRangeChanged(
-                      _FrameRange(
-                        startFrame: widget.range.startFrame,
-                        endFrame: widget.frames[index - 1].index,
-                      ),
-                    );
-                  } else if (closerToTop) {
-                    widget.onRangeChanged(
-                      _FrameRange(
-                        startFrame: frame.index,
-                        endFrame: widget.range.endFrame,
-                      ),
-                    );
-                  } else {
-                    widget.onRangeChanged(
-                      _FrameRange(
-                        startFrame: widget.range.startFrame,
-                        endFrame: frame.index,
-                      ),
-                    );
-                  }
-                },
-                child: _FrameContainer(
-                  selected: selected,
-                  aspectRatio: frame.thumbnail.aspectRatio,
-                  child: Image.network(
-                    frame.thumbnail.url,
-                    fit: BoxFit.cover,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) {
-                        return child;
-                      }
-                      return child
-                          .animate(onPlay: (controller) => controller.repeat())
-                          .shimmer(
-                            duration: const Duration(seconds: 1),
-                            angle: 60 * (pi / 180),
+    const itemWidth = 190.0;
+    final stackWidth = widget.center ? 348.0 : 280.0;
+    return Center(
+      child: SizedBox(
+        width: stackWidth,
+        child: Stack(
+          alignment: widget.center ? Alignment.center : Alignment.centerLeft,
+          children: [
+            SizedBox(
+              width: itemWidth,
+              child: PageView.builder(
+                scrollDirection: Axis.vertical,
+                controller: _pageController,
+                itemCount: widget.frames.length,
+                itemBuilder: (context, index) {
+                  final frame = widget.frames[index];
+                  final selected =
+                      frame.index >= widget.range.startFrame &&
+                      frame.index <= widget.range.endFrame;
+                  final isFirstSelected =
+                      selected && frame.index == widget.range.startFrame;
+                  final isLastSelected =
+                      selected && frame.index == widget.range.endFrame;
+                  return Center(
+                    key: ValueKey(frame.index.toString()),
+                    child: MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: GestureDetector(
+                        onTap: () {
+                          _pageController.animateToPage(
+                            index,
+                            duration: Duration(milliseconds: 300),
+                            curve: Curves.easeOutCubic,
                           );
-                    },
+                        },
+                        child: _FrameContainer(
+                          selected: selected,
+                          isFirstSelected: isFirstSelected,
+                          isLastSelected: isLastSelected,
+                          aspectRatio: frame.thumbnail.aspectRatio,
+                          child: Image.network(
+                            frame.thumbnail.url,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) {
+                                return child;
+                              }
+                              return child
+                                  .animate(
+                                    onPlay: (controller) => controller.repeat(),
+                                  )
+                                  .shimmer(
+                                    duration: const Duration(seconds: 1),
+                                    angle: 60 * (pi / 180),
+                                  );
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            IgnorePointer(
+              child: AnimatedContainer(
+                duration: Duration(milliseconds: 500),
+                curve: Curves.easeOutCubic,
+                width: itemWidth,
+                height: _itemHeight,
+                // Separated decorations to due to error "A borderRadius can only be given on borders with uniform colors"
+                foregroundDecoration: BoxDecoration(
+                  borderRadius: BorderRadius.all(Radius.circular(16)),
+                  border: Border(
+                    top: _startEnabled
+                        ? BorderSide(
+                            color: ColorScheme.of(context).primary,
+                            width: 2,
+                          )
+                        : BorderSide.none,
+                  ),
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.all(Radius.circular(16)),
+                  border: Border(
+                    bottom: _endEnabled
+                        ? BorderSide(
+                            color: ColorScheme.of(context).primary,
+                            width: 2,
+                          )
+                        : BorderSide.none,
                   ),
                 ),
               ),
             ),
-          );
-        },
+            Center(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: widget.center ? 260 : 178,
+                  bottom: _itemHeight - 8,
+                ),
+                child: AnimatedOpacity(
+                  duration: Duration(milliseconds: 500),
+                  curve: Curves.easeOutCubic,
+                  opacity: _startEnabled ? 1.0 : 0.0,
+                  child: _CutButton(
+                    onPressed: !_startEnabled
+                        ? null
+                        : () {
+                            widget.onRangeChanged(
+                              _FrameRange(
+                                startFrame: widget
+                                    .frames[_pageController.page?.round() ?? 0]
+                                    .index,
+                                endFrame: widget.range.endFrame,
+                              ),
+                            );
+                          },
+                    child: Text('Start'),
+                  ),
+                ),
+              ),
+            ),
+            Center(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: widget.center ? 260 : 178,
+                  top: _itemHeight - 8,
+                ),
+                child: AnimatedOpacity(
+                  duration: Duration(milliseconds: 500),
+                  curve: Curves.easeOutCubic,
+                  opacity: _endEnabled ? 1.0 : 0.0,
+                  child: _CutButton(
+                    onPressed: !_endEnabled
+                        ? null
+                        : () {
+                            widget.onRangeChanged(
+                              _FrameRange(
+                                startFrame: widget.range.startFrame,
+                                endFrame: widget
+                                    .frames[_pageController.page?.round() ?? 0]
+                                    .index,
+                              ),
+                            );
+                          },
+                    child: Text('End'),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   void _onScrollUpdate() {
-    if (!_scrollController.hasClients) {
+    if (!_pageController.hasClients) {
       return;
     }
 
+    _updateTrimButtonState();
+
     const fetchTrigger = 200;
+    final position = _pageController.position;
 
     // Start
-    final position = _scrollController.position;
     if (!widget.isFetchingStart &&
         position.pixels <= position.minScrollExtent + fetchTrigger &&
         position.userScrollDirection == ScrollDirection.forward) {
@@ -548,28 +642,85 @@ class _FrameRangePickerState extends State<_FrameRangePicker> {
       widget.onFetchEnd();
     }
   }
+
+  void _updateTrimButtonState() {
+    final pageValue = _pageController.page?.round() ?? 0;
+    final index = widget.frames[pageValue].index;
+    final isStart = index == widget.range.startFrame;
+    final isEnd = index == widget.range.endFrame;
+    final isBeforeStart = index < widget.range.startFrame;
+    final isAfterEnd = index > widget.range.endFrame;
+    if (_startEnabled && (isStart || isAfterEnd)) {
+      setState(() => _startEnabled = false);
+    } else if (!_startEnabled && !isStart && !isAfterEnd) {
+      setState(() => _startEnabled = true);
+    }
+
+    if (_endEnabled && (isEnd || isBeforeStart)) {
+      setState(() => _endEnabled = false);
+    } else if (!_endEnabled && !isEnd && !isBeforeStart) {
+      setState(() => _endEnabled = true);
+    }
+  }
 }
 
 class _FrameContainer extends StatelessWidget {
   final bool selected;
+  final bool isFirstSelected;
+  final bool isLastSelected;
   final double aspectRatio;
   final Widget? child;
 
   const _FrameContainer({
     super.key,
     this.selected = false,
+    this.isFirstSelected = false,
+    this.isLastSelected = false,
     required this.aspectRatio,
     this.child,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: aspectRatio * _itemHeight,
       height: _itemHeight,
-      padding: const EdgeInsets.all(4.0),
-      color: selected ? ColorScheme.of(context).primary : null,
-      child: SizedBox.expand(child: child),
+      child: AnimatedContainer(
+        duration: Duration(milliseconds: 500),
+        curve: Curves.easeOutCubic,
+        clipBehavior: Clip.antiAlias,
+        padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.only(
+            topLeft: !isFirstSelected ? Radius.zero : Radius.circular(12),
+            topRight: !isFirstSelected ? Radius.zero : Radius.circular(12),
+            bottomLeft: !isLastSelected ? Radius.zero : Radius.circular(12),
+            bottomRight: !isLastSelected ? Radius.zero : Radius.circular(12),
+          ),
+          color: selected ? ColorScheme.of(context).primary : null,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.all(Radius.circular(8)),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+class _CutButton extends StatelessWidget {
+  final VoidCallback? onPressed;
+  final Widget child;
+
+  const _CutButton({super.key, required this.onPressed, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton.icon(
+      style: TextButton.styleFrom(minimumSize: Size(20, 40)),
+      onPressed: onPressed,
+      icon: RotatedBox(quarterTurns: 2, child: Icon(Icons.cut)),
+      label: child,
     );
   }
 }
@@ -579,6 +730,15 @@ class _FrameRange {
   final int endFrame;
 
   _FrameRange({required this.startFrame, required this.endFrame});
+
+  @override
+  int get hashCode => Object.hash(startFrame, endFrame);
+
+  @override
+  bool operator ==(Object other) =>
+      other is _FrameRange &&
+      other.startFrame == startFrame &&
+      other.endFrame == endFrame;
 }
 
 class _UploadDialog extends ConsumerStatefulWidget {
