@@ -102,7 +102,7 @@ class _CreatePageState extends ConsumerState<CreatePage> {
                       range: _range,
                     ),
                   ),
-                  SizedBox(height: 16),
+                  SizedBox(height: 8),
                   Expanded(
                     child: _FramesColumn(
                       key: _framesColumnKey,
@@ -116,7 +116,7 @@ class _CreatePageState extends ConsumerState<CreatePage> {
                       onFetchEnd: ref.read(_provider.notifier).fetchEnd,
                     ),
                   ),
-                  SizedBox(height: 8),
+                  SizedBox(height: 16),
                   FilledButton.icon(
                     onPressed: _postMeme,
                     icon: Icon(Icons.done),
@@ -176,13 +176,10 @@ class _CreatePageState extends ConsumerState<CreatePage> {
                                   range: _range,
                                 ),
                                 SizedBox(height: 8),
-                                SizedBox(
-                                  height: 50,
-                                  child: FilledButton.icon(
-                                    onPressed: _postMeme,
-                                    icon: Icon(Icons.done),
-                                    label: Text('Finish'),
-                                  ),
+                                FilledButton.icon(
+                                  onPressed: _postMeme,
+                                  icon: Icon(Icons.done),
+                                  label: Text('Finish'),
                                 ),
                               ],
                             ),

@@ -51,6 +51,15 @@ class JerememeApp extends StatelessWidget {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           foregroundColor: Colors.white,
+          minimumSize: Size.fromHeight(50),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(8)),
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          minimumSize: Size.fromHeight(50),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(8)),
           ),

@@ -24,55 +24,60 @@ class _ViewerPageState extends State<ViewerPage> {
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
+        child: SizedBox(
+          width: 500,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 MemeDisplay(url: widget.url),
+                SizedBox(height: 64),
+                OutlinedButton.icon(
+                  onPressed: () => _download(widget.url),
+                  label: Text('Download'),
+                  icon: Icon(Icons.download),
+                ),
                 SizedBox(height: 16),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextButton.icon(
+                ShareBuilder(
+                  data: Data(url: widget.url),
+                  builder: (context, onShare) {
+                    if (onShare == null) {
+                      return FilledButton.icon(
+                        onPressed: () => _copy(widget.url),
+                        label: Text('Copy Link'),
+                        icon: Icon(Icons.copy),
+                      );
+                    }
+                    return OutlinedButton.icon(
                       onPressed: () => _copy(widget.url),
                       label: Text('Copy Link'),
                       icon: Icon(Icons.copy),
-                    ),
-                    SizedBox(height: 4),
-                    TextButton.icon(
-                      onPressed: () => _download(widget.url),
-                      label: Text('Download'),
-                      icon: Icon(Icons.download),
-                    ),
-                    SizedBox(height: 4),
-                    ShareBuilder(
-                      data: Data(url: widget.url),
-                      builder: (context, onShare) {
-                        if (onShare == null) {
-                          return SizedBox.shrink();
-                        }
-                        return TextButton.icon(
-                          onPressed: onShare,
-                          label: Text('Share Meme'),
-                          icon: Icon(Icons.ios_share),
-                        );
-                      },
-                    ),
-                  ],
+                    );
+                  },
+                ),
+                SizedBox(height: 16),
+                ShareBuilder(
+                  data: Data(url: widget.url),
+                  builder: (context, onShare) {
+                    if (onShare == null) {
+                      return SizedBox.shrink();
+                    }
+                    return FilledButton.icon(
+                      onPressed: () {},
+                      label: Text('Share Meme'),
+                      icon: Icon(Icons.ios_share),
+                    );
+                  },
+                ),
+                SizedBox(height: 64),
+                TextButton(
+                  onPressed: () => context.goNamed('home'),
+                  child: Text('Create Another'),
                 ),
               ],
             ),
-            SizedBox(height: 64),
-            OutlinedButton(
-              onPressed: () => context.goNamed('home'),
-              child: Text('Back to home'),
-            ),
-          ],
+          ),
         ),
       ),
     );
