@@ -13,7 +13,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-const _itemHeight = 140.0;
+const _itemHeight = 126.0;
 
 class CreatePage extends ConsumerStatefulWidget {
   final String mediaId;
@@ -138,17 +138,20 @@ class _CreatePageState extends ConsumerState<CreatePage> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _FramesColumn(
-                  key: _framesColumnKey,
-                  frames: _reducedFrames,
-                  range: _range,
-                  onRangeChanged: (range, frames) {
-                    setState(() => _range = range);
-                    _textController.text = _createCaption(frames);
-                  },
-                  center: false,
-                  onFetchStart: ref.read(_provider.notifier).fetchStart,
-                  onFetchEnd: ref.read(_provider.notifier).fetchEnd,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: _FramesColumn(
+                    key: _framesColumnKey,
+                    frames: _reducedFrames,
+                    range: _range,
+                    onRangeChanged: (range, frames) {
+                      setState(() => _range = range);
+                      _textController.text = _createCaption(frames);
+                    },
+                    center: false,
+                    onFetchStart: ref.read(_provider.notifier).fetchStart,
+                    onFetchEnd: ref.read(_provider.notifier).fetchEnd,
+                  ),
                 ),
                 Expanded(
                   child: Center(
@@ -337,7 +340,6 @@ class _FramesColumn extends StatelessWidget {
       AsyncLoading() => SizedBox(
         width: 240,
         child: ListView.builder(
-          padding: EdgeInsets.symmetric(horizontal: 16),
           itemBuilder: (context, index) {
             return Center(
               child: _FrameContainer(
@@ -354,32 +356,29 @@ class _FramesColumn extends StatelessWidget {
         ),
       ),
       AsyncError(:final error) => Center(child: Text(error.toString())),
-      AsyncData(:final value) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return _FrameRangePicker(
-              range: range,
-              onRangeChanged: (range) {
-                final frameCount = range.endFrame - range.startFrame;
-                if (frameCount > 240) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Maximum length is 10 seconds')),
-                  );
-                } else {
-                  onRangeChanged(range, value.selectedFrames(range).toList());
-                }
-              },
-              center: center,
-              height: constraints.maxHeight,
-              frames: value.frames,
-              isFetchingStart: value.isFetchingStart,
-              isFetchingEnd: value.isFetchingEnd,
-              onFetchStart: onFetchStart,
-              onFetchEnd: onFetchEnd,
-            );
-          },
-        ),
+      AsyncData(:final value) => LayoutBuilder(
+        builder: (context, constraints) {
+          return _FrameRangePicker(
+            range: range,
+            onRangeChanged: (range) {
+              final frameCount = range.endFrame - range.startFrame;
+              if (frameCount > 240) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Maximum length is 10 seconds')),
+                );
+              } else {
+                onRangeChanged(range, value.selectedFrames(range).toList());
+              }
+            },
+            center: center,
+            height: constraints.maxHeight,
+            frames: value.frames,
+            isFetchingStart: value.isFetchingStart,
+            isFetchingEnd: value.isFetchingEnd,
+            onFetchStart: onFetchStart,
+            onFetchEnd: onFetchEnd,
+          );
+        },
       ),
     };
   }
@@ -469,8 +468,8 @@ class _FrameRangePickerState extends State<_FrameRangePicker> {
 
   @override
   Widget build(BuildContext context) {
-    const itemWidth = 190.0;
-    final stackWidth = widget.center ? 348.0 : 280.0;
+    const itemWidth = 170.0;
+    final stackWidth = widget.center ? 360.0 : 280.0;
     return Center(
       child: SizedBox(
         width: stackWidth,
@@ -589,7 +588,7 @@ class _FrameRangePickerState extends State<_FrameRangePicker> {
             Center(
               child: Padding(
                 padding: EdgeInsets.only(
-                  left: widget.center ? 260 : 178,
+                  left: widget.center ? 248 : 146,
                   bottom: _itemHeight - 8,
                 ),
                 child: AnimatedOpacity(
@@ -609,7 +608,11 @@ class _FrameRangePickerState extends State<_FrameRangePicker> {
                               ),
                             );
                           },
-                    child: Text('Start'),
+                    child: Text(
+                      'Start',
+                      overflow: TextOverflow.visible,
+                      maxLines: 1,
+                    ),
                   ),
                 ),
               ),
@@ -617,7 +620,7 @@ class _FrameRangePickerState extends State<_FrameRangePicker> {
             Center(
               child: Padding(
                 padding: EdgeInsets.only(
-                  left: widget.center ? 260 : 178,
+                  left: widget.center ? 248 : 146,
                   top: _itemHeight - 8,
                 ),
                 child: AnimatedOpacity(
