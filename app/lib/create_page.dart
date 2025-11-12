@@ -4,7 +4,7 @@ import 'package:app/repositories/frames_repository.dart';
 import 'package:app/repositories/search_repository.dart';
 import 'package:app/services/api_service.dart';
 import 'package:app/services/models/frame.dart';
-import 'package:app/util.dart';
+import 'package:app/services/models/meme.dart';
 import 'package:app/widgets/meme_preview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -87,11 +87,12 @@ class _CreatePageState extends ConsumerState<CreatePage> {
       builder: (context, constraints) {
         if (constraints.maxWidth < 800) {
           return Center(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: ConstrainedBox(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ConstrainedBox(
                     constraints: BoxConstraints(maxWidth: 500),
                     child: _MemeColumn(
                       key: _memePreviewColumnKey,
@@ -101,22 +102,29 @@ class _CreatePageState extends ConsumerState<CreatePage> {
                       range: _range,
                     ),
                   ),
-                ),
-                SizedBox(height: 16),
-                Expanded(
-                  child: _FramesColumn(
-                    key: _framesColumnKey,
-                    frames: _reducedFrames,
-                    range: _range,
-                    onRangeChanged: (range, frames) {
-                      setState(() => _range = range);
-                      _textController.text = _createCaption(frames);
-                    },
-                    onFetchStart: ref.read(_provider.notifier).fetchStart,
-                    onFetchEnd: ref.read(_provider.notifier).fetchEnd,
+                  SizedBox(height: 16),
+                  Expanded(
+                    child: _FramesColumn(
+                      key: _framesColumnKey,
+                      frames: _reducedFrames,
+                      range: _range,
+                      onRangeChanged: (range, frames) {
+                        setState(() => _range = range);
+                        _textController.text = _createCaption(frames);
+                      },
+                      onFetchStart: ref.read(_provider.notifier).fetchStart,
+                      onFetchEnd: ref.read(_provider.notifier).fetchEnd,
+                    ),
                   ),
-                ),
-              ],
+                  SizedBox(height: 8),
+                  FilledButton.icon(
+                    onPressed: _postMeme,
+                    icon: Icon(Icons.done),
+                    label: Text('Finish'),
+                  ),
+                  SizedBox(height: 16),
+                ],
+              ),
             ),
           );
         }
@@ -156,12 +164,27 @@ class _CreatePageState extends ConsumerState<CreatePage> {
                           padding: const EdgeInsets.symmetric(horizontal: 16.0),
                           child: ConstrainedBox(
                             constraints: BoxConstraints(maxWidth: 500),
-                            child: _MemeColumn(
-                              key: _memePreviewColumnKey,
-                              textController: _textController,
-                              mediaId: widget.mediaId,
-                              frames: _frames,
-                              range: _range,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _MemeColumn(
+                                  key: _memePreviewColumnKey,
+                                  textController: _textController,
+                                  mediaId: widget.mediaId,
+                                  frames: _frames,
+                                  range: _range,
+                                ),
+                                SizedBox(height: 8),
+                                SizedBox(
+                                  height: 50,
+                                  child: FilledButton.icon(
+                                    onPressed: _postMeme,
+                                    icon: Icon(Icons.done),
+                                    label: Text('Finish'),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -192,6 +215,26 @@ class _CreatePageState extends ConsumerState<CreatePage> {
     }
     return subtitles.join('\n').toUpperCase();
   }
+
+  void _postMeme() async {
+    final meme = await showDialog<Meme>(
+      context: context,
+      barrierDismissible: false,
+      builder: (builder) {
+        return _UploadDialog(
+          mediaId: widget.mediaId,
+          range: _range,
+          text: _textController.text,
+        );
+      },
+    );
+    if (!mounted) {
+      return;
+    }
+    if (meme != null) {
+      context.goNamed('viewer', pathParameters: {'id': meme.id});
+    }
+  }
 }
 
 class _MemeColumn extends ConsumerStatefulWidget {
@@ -213,9 +256,6 @@ class _MemeColumn extends ConsumerStatefulWidget {
 }
 
 class _MemeColumnState extends ConsumerState<_MemeColumn> {
-  final _uploadProgressNotifier = ValueNotifier<double>(0);
-  bool _creating = false;
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -267,59 +307,8 @@ class _MemeColumnState extends ConsumerState<_MemeColumn> {
             },
           ),
         ),
-        SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
-          height: 50,
-          child: Builder(
-            builder: (context) {
-              if (!_creating) {
-                return FilledButton.icon(
-                  onPressed: _creating ? null : _postMeme,
-                  label: Text('Finish'),
-                  icon: Icon(Icons.done),
-                );
-              }
-              return ValueListenableBuilder(
-                valueListenable: _uploadProgressNotifier,
-                builder: (context, value, child) {
-                  return LinearProgressIndicator(value: value);
-                },
-              );
-            },
-          ),
-        ),
       ],
     );
-  }
-
-  void _postMeme() async {
-    final startIndex = widget.range.startFrame;
-    final endIndex = widget.range.endFrame;
-    final text = widget.textController.text;
-    _uploadProgressNotifier.value = 0;
-
-    final api = ref.read(apiServiceProvider);
-    setState(() => _creating = true);
-    final result = await api.postMeme(
-      mediaId: widget.mediaId,
-      startFrame: startIndex,
-      endFrame: endIndex,
-      text: text,
-      onProgress: (progress) {
-        _uploadProgressNotifier.value = progress;
-      },
-    );
-    if (!mounted) {
-      return;
-    }
-    setState(() => _creating = false);
-    switch (result) {
-      case Left(:final value):
-        showError(context: context, message: value);
-      case Right(:final value):
-        context.goNamed('viewer', pathParameters: {'id': value.data.id});
-    }
   }
 }
 
@@ -593,6 +582,78 @@ class _FrameRange {
   final int endFrame;
 
   _FrameRange({required this.startFrame, required this.endFrame});
+}
+
+class _UploadDialog extends ConsumerStatefulWidget {
+  final String mediaId;
+  final _FrameRange range;
+  final String text;
+
+  const _UploadDialog({
+    super.key,
+    required this.mediaId,
+    required this.range,
+    required this.text,
+  });
+
+  @override
+  ConsumerState<_UploadDialog> createState() => _UploadDialogState();
+}
+
+class _UploadDialogState extends ConsumerState<_UploadDialog> {
+  final _uploadProgressNotifier = ValueNotifier<double>(0);
+
+  @override
+  void initState() {
+    super.initState();
+    _post();
+  }
+
+  void _post() async {
+    final api = ref.read(apiServiceProvider);
+    final result = await api.postMeme(
+      mediaId: widget.mediaId,
+      startFrame: widget.range.startFrame,
+      endFrame: widget.range.endFrame,
+      text: widget.text,
+      onProgress: (progress) => _uploadProgressNotifier.value = progress,
+    );
+    if (!mounted) {
+      return;
+    }
+    switch (result) {
+      case Left(:final value):
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(value)));
+        Navigator.of(context).pop();
+      case Right(:final value):
+        Navigator.of(context).pop(value.data);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      contentPadding: EdgeInsets.all(16),
+      title: Text('Finishing...'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: 50,
+            child: ValueListenableBuilder(
+              valueListenable: _uploadProgressNotifier,
+              builder: (context, value, child) {
+                return LinearProgressIndicator(value: value);
+              },
+            ),
+          ),
+          SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
 }
 
 extension on Frames {
