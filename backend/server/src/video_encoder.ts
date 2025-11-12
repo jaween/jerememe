@@ -27,14 +27,14 @@ export class VideoEncoder {
           os.tmpdir(),
           `${tempUuid}_${index}.webp`
         );
-        fs.writeFileSync(tempFilePath, webpBuffer);
+        fs.writeFileSync(tempFilePath, webpBuffer, { flush: true });
         return tempFilePath;
       })
     );
     console.info("[VideoEncoder] Images fetched");
 
     const subsPath = path.join(os.tmpdir(), `${tempUuid}.srt`);
-    fs.writeFileSync(subsPath, this.textToSrt(text));
+    fs.writeFileSync(subsPath, this.textToSrt(text), { flush: true });
 
     const isSingleFrame = inputFiles.length === 1;
     const outputFilePath = path.join(os.tmpdir(), `${tempUuid}.webp`);
@@ -48,7 +48,7 @@ export class VideoEncoder {
       "-filter_complex",
       `concat=n=${inputFiles.length}:v=1:a=0[v]; \
       [v]settb=AVTB,setpts=N/${frameRate}/TB,fps=${frameRate}[v2]; \
-      [v2]subtitles=${subsPath}:fontsdir=/srv/server:force_style='FontName=Lithos,FontSize=22,MarginL=0,MarginR=0,Alignment=2,PrimaryColour=&HFFFFFF&,OutlineColour=&H000000&,BorderStyle=1,Outline=2'[out]`,
+      [v2]subtitles=${subsPath}:fontsdir=/srv:force_style='FontName=Lithos,FontSize=24,MarginL=0,MarginR=0,Alignment=2,PrimaryColour=&HFFFFFF&,OutlineColour=&H000000&,BorderStyle=1,Outline=2'[out]`,
       "-map",
       "[out]",
       "-c:v",

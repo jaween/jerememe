@@ -15,4 +15,4 @@ services:
     ports:
       - 8080:8080
     volumes:
-      - ./server/src:/srv/server/src
+      - ./server/src:/srv/src

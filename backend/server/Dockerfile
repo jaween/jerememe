@@ -6,7 +6,7 @@ ENV BASE_URL $BASE_URL
 RUN apk add --no-cache ffmpeg
 
 # Source code
-WORKDIR /srv/
+WORKDIR /srv
 COPY package.json .
 COPY package-lock.json .
 RUN npm install
