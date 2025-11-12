@@ -76,52 +76,24 @@ Future<void> _extract({
   required File mediaFile,
 }) async {
   print('Processing ${metadata.id}');
-
-  const extractDuration = Duration(minutes: 1);
   final resolution = await getVideoResolution(mediaFile.path);
   final videoDuration = await getVideoDuration(mediaFile.path);
   int frameCount = 0;
-  List<Uint8List>? previousFrames;
   final roundedUpTotalMinutes = (videoDuration.inSeconds / 60).ceil();
-  for (
-    Duration skip = Duration.zero;
-    skip < videoDuration;
-    skip += extractDuration
-  ) {
-    final extractionFuture = extractFrames(
-      mediaId: metadata.id,
-      videoPath: mediaFile.path,
-      skip: skip,
-      duration: extractDuration,
-    );
+  print('  Extracting frames ($roundedUpTotalMinutes minute video)');
+  final frames = await extractFrames(
+    mediaId: metadata.id,
+    videoPath: mediaFile.path,
+  );
 
-    print(
-      '  Extracting frames from ${skip.inMinutes} mins to ${(skip + extractDuration).inMinutes} mins (out of $roundedUpTotalMinutes mins)',
-    );
-
-    if (previousFrames != null) {
-      await _uploadFrames(
-        s3: s3,
-        frames: previousFrames,
-        frameCount: frameCount,
-        mediaId: metadata.id,
-      );
-      frameCount += previousFrames.length;
-    }
-
-    previousFrames = await extractionFuture;
-  }
-
-  // Final frames to upload
-  if (previousFrames != null) {
-    await _uploadFrames(
-      s3: s3,
-      frames: previousFrames,
-      frameCount: frameCount,
-      mediaId: metadata.id,
-    );
-    frameCount += previousFrames.length;
-  }
+  print('  Uploading frames');
+  await _uploadFrames(
+    s3: s3,
+    frames: frames,
+    frameCount: frameCount,
+    mediaId: metadata.id,
+  );
+  frameCount += frames.length;
 
   print('  Inserting media info into database');
   await database.addMedia(
@@ -141,12 +113,16 @@ Future<void> _uploadFrames({
   required String mediaId,
 }) async {
   const uploadBatchSize = 48;
+  final start = DateTime.now();
   for (int f = 0; f < frames.length; f += uploadBatchSize) {
+    if (f % 1008 == 0) {
+      final now = DateTime.now();
+      print(
+        '  Uploading $mediaId: $f frames uploaded (${(100 * f / (frames.length - 1)).toStringAsFixed(1)}%), ${(now.difference(start)).inMinutes} minutes elapsed',
+      );
+    }
     final batch = frames.skip(f).take(uploadBatchSize).toList();
     final batchStartFrameIndex = frameCount + f;
-    print(
-      '  Uploading batch of $uploadBatchSize frames (${f + 1} / ${frames.length})',
-    );
     await Future.wait([
       for (final (batchOffset, frame) in batch.indexed)
         s3.upload(

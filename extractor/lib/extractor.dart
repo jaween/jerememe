@@ -13,8 +13,6 @@ Future<List<SubtitleLine>?> parseSrtFile(String srtPath) async {
 Future<List<Uint8List>> extractFrames({
   required String mediaId,
   required String videoPath,
-  required Duration skip,
-  required Duration duration,
 }) async {
   final output = <Uint8List>[];
   final process = await Process.start('ffmpeg', [
@@ -23,22 +21,16 @@ Future<List<Uint8List>> extractFrames({
     'error',
     '-v',
     'debug',
-    '-ss',
-    _formatFfmpegTime(skip),
     '-i',
     videoPath,
     '-vf',
-    'scale=-1:360',
-    '-t',
-    _formatFfmpegTime(duration),
-    '-r',
-    '24',
+    'fps=24,scale=-1:360',
     '-f',
     'image2pipe',
     '-vcodec',
     'libwebp',
     '-qscale',
-    '50',
+    '70',
     '-',
   ], mode: ProcessStartMode.normal);
   process.stderr.transform(const Utf8Decoder()).listen((_) {});
@@ -110,13 +102,6 @@ Future<Duration> getVideoDuration(String videoPath) async {
   return Duration(seconds: double.parse(result.stdout.trim()).toInt());
 }
 
-String _formatFfmpegTime(Duration duration) {
-  final hours = duration.inHours;
-  final minutes = duration.inMinutes % 60;
-  final seconds = duration.inSeconds % 60;
-  return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-}
-
 List<SubtitleLine> _parseSrt(String srt) {
   srt = srt.replaceFirst('\uFEFF', '');
   srt = srt.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
@@ -184,7 +169,7 @@ List<SubtitleLine> _parseSrt(String srt) {
       continue;
     }
 
-    const frameInterval = Duration(microseconds: 41708);
+    const frameInterval = Duration(microseconds: 41667);
     final startFrame = (start.inMicroseconds / frameInterval.inMicroseconds)
         .floor();
     final endFrame = (end.inMicroseconds / frameInterval.inMicroseconds).ceil();
