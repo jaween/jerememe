@@ -554,7 +554,7 @@ class _FrameRangePickerState extends State<_FrameRangePicker> {
             ),
             IgnorePointer(
               child: AnimatedContainer(
-                duration: Duration(milliseconds: 500),
+                duration: Duration(milliseconds: 250),
                 curve: Curves.easeOutCubic,
                 width: itemWidth,
                 height: _itemHeight,
@@ -590,7 +590,7 @@ class _FrameRangePickerState extends State<_FrameRangePicker> {
                   bottom: _itemHeight - 8,
                 ),
                 child: AnimatedOpacity(
-                  duration: Duration(milliseconds: 500),
+                  duration: Duration(milliseconds: 250),
                   curve: Curves.easeOutCubic,
                   opacity: _startEnabled ? 1.0 : 0.0,
                   child: _CutButton(
@@ -618,7 +618,7 @@ class _FrameRangePickerState extends State<_FrameRangePicker> {
                   top: _itemHeight - 8,
                 ),
                 child: AnimatedOpacity(
-                  duration: Duration(milliseconds: 500),
+                  duration: Duration(milliseconds: 250),
                   curve: Curves.easeOutCubic,
                   opacity: _endEnabled ? 1.0 : 0.0,
                   child: _CutButton(
@@ -713,7 +713,7 @@ class _FrameContainer extends StatelessWidget {
       width: aspectRatio * _itemHeight,
       height: _itemHeight,
       child: AnimatedContainer(
-        duration: Duration(milliseconds: 500),
+        duration: Duration(milliseconds: 350),
         curve: Curves.easeOutCubic,
         clipBehavior: Clip.antiAlias,
         padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
