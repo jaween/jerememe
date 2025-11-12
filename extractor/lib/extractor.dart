@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart' as crypto;
 import 'package:extractor/media.dart';
+import 'package:extractor/s3.dart';
 import 'package:extractor/subtitles.dart';
 
 Future<List<SubtitleLine>?> parseSrtFile(String srtPath) async {
@@ -14,6 +16,7 @@ Future<List<Uint8List>> extractFrames({
   required String mediaId,
   required String videoPath,
 }) async {
+  final start = DateTime.now();
   final output = <Uint8List>[];
   final process = await Process.start('ffmpeg', [
     '-hide_banner',
@@ -41,8 +44,39 @@ Future<List<Uint8List>> extractFrames({
     output.add(Uint8List.fromList(chunk));
   }
   await process.exitCode;
-  print('  Extracted $frame frames');
+  print(
+    '  Extracted $frame frames in ${(DateTime.now().difference(start)).inMinutes} minutes',
+  );
   return output;
+}
+
+Future<void> uploadFrames({
+  required S3Storage s3,
+  required List<Uint8List> frames,
+  required String mediaId,
+}) async {
+  const uploadBatchSize = 48;
+  final start = DateTime.now();
+  for (int f = 0; f < frames.length; f += uploadBatchSize) {
+    if (f % 1008 == 0) {
+      final now = DateTime.now();
+      print(
+        '  Uploading $mediaId: $f frames uploaded (${(100 * f / (frames.length - 1)).toStringAsFixed(1)}%), ${(now.difference(start)).inMinutes} minutes elapsed',
+      );
+    }
+    final batch = frames.skip(f).take(uploadBatchSize).toList();
+    await Future.wait([
+      for (final (batchOffset, frame) in batch.indexed)
+        s3.upload(
+          key: _generateS3FrameKey(
+            mediaId: mediaId,
+            frameIndex: f + batchOffset,
+          ),
+          data: frame,
+          contentType: 'image/webp',
+        ),
+    ]);
+  }
 }
 
 Future<Resolution> getVideoResolution(String videoPath) async {
@@ -100,6 +134,13 @@ Future<Duration> getVideoDuration(String videoPath) async {
   }
 
   return Duration(seconds: double.parse(result.stdout.trim()).toInt());
+}
+
+String _generateS3FrameKey({required String mediaId, required int frameIndex}) {
+  final base = '$mediaId/frames/$frameIndex';
+  final bytes = utf8.encode(base);
+  final digest = crypto.sha256.convert(bytes);
+  return 'public/$mediaId/frames/${digest.toString().substring(0, 8)}/$frameIndex.webp';
 }
 
 List<SubtitleLine> _parseSrt(String srt) {
