@@ -648,11 +648,16 @@ class _FrameRangePickerState extends State<_FrameRangePicker> {
     );
   }
 
-  void _onScrollUpdate() {
+  void _onScrollUpdate() async {
     if (!_pageController.hasClients) {
       return;
     }
 
+    // Somehow listener is called during build, so we defer the setState
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) {
+      return;
+    }
     _updateTrimButtonState();
 
     const fetchTrigger = 200;
