@@ -180,16 +180,23 @@ class SearchResultCard extends StatelessWidget {
             child: Image.network(
               result.thumbnail.url,
               fit: BoxFit.cover,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) {
-                  return child;
-                }
-                return Container(color: Colors.grey.shade300)
-                    .animate(onPlay: (controller) => controller.repeat())
-                    .shimmer(
-                      duration: const Duration(seconds: 1),
-                      angle: 60 * (pi / 180),
-                    );
+              frameBuilder: (context, child, frame, wasLoadedSynchronously) {
+                return AnimatedCrossFade(
+                  duration: Duration(milliseconds: 250),
+                  alignment: Alignment.center,
+                  crossFadeState: frame == 0
+                      ? CrossFadeState.showFirst
+                      : CrossFadeState.showSecond,
+                  firstChild: child,
+                  secondChild: Center(
+                    child: Container(color: Colors.black)
+                        .animate(onPlay: (controller) => controller.repeat())
+                        .shimmer(
+                          duration: const Duration(seconds: 1),
+                          angle: 60 * (pi / 180),
+                        ),
+                  ),
+                );
               },
             ),
           ),

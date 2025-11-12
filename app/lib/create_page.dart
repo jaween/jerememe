@@ -504,19 +504,39 @@ class _FrameRangePickerState extends State<_FrameRangePicker> {
                           child: Image.network(
                             frame.thumbnail.url,
                             fit: BoxFit.cover,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) {
-                                return child;
-                              }
-                              return child
-                                  .animate(
-                                    onPlay: (controller) => controller.repeat(),
-                                  )
-                                  .shimmer(
-                                    duration: const Duration(seconds: 1),
-                                    angle: 60 * (pi / 180),
+                            frameBuilder:
+                                (
+                                  context,
+                                  child,
+                                  frame,
+                                  wasLoadedSynchronously,
+                                ) {
+                                  return AnimatedCrossFade(
+                                    duration: Duration(milliseconds: 250),
+                                    alignment: Alignment.center,
+                                    crossFadeState: frame == 0
+                                        ? CrossFadeState.showFirst
+                                        : CrossFadeState.showSecond,
+                                    firstChild: child,
+                                    secondChild: Center(
+                                      child:
+                                          Container(
+                                                height: 140,
+                                                color: Colors.black,
+                                              )
+                                              .animate(
+                                                onPlay: (controller) =>
+                                                    controller.repeat(),
+                                              )
+                                              .shimmer(
+                                                duration: const Duration(
+                                                  seconds: 1,
+                                                ),
+                                                angle: 60 * (pi / 180),
+                                              ),
+                                    ),
                                   );
-                            },
+                                },
                           ),
                         ),
                       ),
