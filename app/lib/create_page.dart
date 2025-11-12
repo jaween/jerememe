@@ -5,6 +5,7 @@ import 'package:app/repositories/search_repository.dart';
 import 'package:app/services/api_service.dart';
 import 'package:app/services/models/frame.dart';
 import 'package:app/services/models/meme.dart';
+import 'package:app/widgets/image.dart';
 import 'package:app/widgets/meme_preview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -353,11 +354,11 @@ class _FramesColumn extends StatelessWidget {
         ),
       ),
       AsyncError(:final error) => Center(child: Text(error.toString())),
-      AsyncData(:final value) => LayoutBuilder(
-        builder: (context, constraints) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: _FrameRangePicker(
+      AsyncData(:final value) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return _FrameRangePicker(
               range: range,
               onRangeChanged: (range) {
                 final frameCount = range.endFrame - range.startFrame;
@@ -376,9 +377,9 @@ class _FramesColumn extends StatelessWidget {
               isFetchingEnd: value.isFetchingEnd,
               onFetchStart: onFetchStart,
               onFetchEnd: onFetchEnd,
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     };
   }
@@ -521,6 +522,8 @@ class _FrameRangePickerState extends State<_FrameRangePicker> {
                                   return AnimatedCrossFade(
                                     duration: Duration(milliseconds: 250),
                                     alignment: Alignment.center,
+                                    layoutBuilder:
+                                        animatedCrossFadeFilledLayoutBuilder,
                                     crossFadeState: frame == 0
                                         ? CrossFadeState.showFirst
                                         : CrossFadeState.showSecond,

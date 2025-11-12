@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:app/repositories/search_repository.dart';
 import 'package:app/services/models/search.dart';
+import 'package:app/widgets/image.dart';
 import 'package:app/widgets/search_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -184,6 +185,7 @@ class SearchResultCard extends StatelessWidget {
                 return AnimatedCrossFade(
                   duration: Duration(milliseconds: 250),
                   alignment: Alignment.center,
+                  layoutBuilder: animatedCrossFadeFilledLayoutBuilder,
                   crossFadeState: frame == 0
                       ? CrossFadeState.showFirst
                       : CrossFadeState.showSecond,
