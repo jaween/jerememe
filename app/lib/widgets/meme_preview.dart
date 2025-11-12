@@ -162,17 +162,19 @@ class _Playback extends StatefulWidget {
 class _PlaybackState extends State<_Playback>
     with SingleTickerProviderStateMixin {
   static const _fps = 24;
-  static const _frameDuration = Duration(milliseconds: 1000 ~/ _fps);
+  static const _frameDuration = Duration(microseconds: 1000000 ~/ _fps);
 
-  late final Ticker _ticker;
+  Ticker? _ticker;
   Duration _elapsed = Duration.zero;
 
   @override
   void initState() {
     super.initState();
-    _ticker = createTicker(_onTick);
-    if (widget.frames.isNotEmpty) {
-      _ticker.start();
+    if (widget.frames.length > 1) {
+      _ticker = createTicker(_onTick);
+      if (widget.frames.isNotEmpty) {
+        _ticker?.start();
+      }
     }
   }
 
@@ -182,7 +184,7 @@ class _PlaybackState extends State<_Playback>
 
   @override
   void dispose() {
-    _ticker.dispose();
+    _ticker?.dispose();
     super.dispose();
   }
 
