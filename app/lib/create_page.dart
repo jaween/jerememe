@@ -85,7 +85,7 @@ class _CreatePageState extends ConsumerState<CreatePage> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth < 832) {
+        if (constraints.maxWidth < 864) {
           return Center(
             child: Container(
               width: 500,
@@ -121,7 +121,7 @@ class _CreatePageState extends ConsumerState<CreatePage> {
                   ),
                   SizedBox(height: 16),
                   FilledButton.icon(
-                    onPressed: _postMeme,
+                    onPressed: !_frames.hasValue ? null : _postMeme,
                     icon: Icon(Icons.done),
                     label: Text('Finish'),
                   ),
@@ -178,7 +178,9 @@ class _CreatePageState extends ConsumerState<CreatePage> {
                                 ),
                                 SizedBox(height: 8),
                                 FilledButton.icon(
-                                  onPressed: _postMeme,
+                                  onPressed: !_frames.hasValue
+                                      ? null
+                                      : _postMeme,
                                   icon: Icon(Icons.done),
                                   label: Text('Finish'),
                                 ),
@@ -353,25 +355,28 @@ class _FramesColumn extends StatelessWidget {
       AsyncError(:final error) => Center(child: Text(error.toString())),
       AsyncData(:final value) => LayoutBuilder(
         builder: (context, constraints) {
-          return _FrameRangePicker(
-            range: range,
-            onRangeChanged: (range) {
-              final frameCount = range.endFrame - range.startFrame;
-              if (frameCount > 240) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Maximum length is 10 seconds')),
-                );
-              } else {
-                onRangeChanged(range, value.selectedFrames(range).toList());
-              }
-            },
-            center: center,
-            height: constraints.maxHeight,
-            frames: value.frames,
-            isFetchingStart: value.isFetchingStart,
-            isFetchingEnd: value.isFetchingEnd,
-            onFetchStart: onFetchStart,
-            onFetchEnd: onFetchEnd,
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: _FrameRangePicker(
+              range: range,
+              onRangeChanged: (range) {
+                final frameCount = range.endFrame - range.startFrame;
+                if (frameCount > 240) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Maximum length is 10 seconds')),
+                  );
+                } else {
+                  onRangeChanged(range, value.selectedFrames(range).toList());
+                }
+              },
+              center: center,
+              height: constraints.maxHeight,
+              frames: value.frames,
+              isFetchingStart: value.isFetchingStart,
+              isFetchingEnd: value.isFetchingEnd,
+              onFetchStart: onFetchStart,
+              onFetchEnd: onFetchEnd,
+            ),
           );
         },
       ),

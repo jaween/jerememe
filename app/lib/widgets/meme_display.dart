@@ -36,8 +36,8 @@ class _MemeDisplayState extends State<MemeDisplay> {
     if (isVideo == null) {
       return SizedBox.shrink();
     }
-    return SizedBox(
-      width: 500,
+    return ConstrainedBox(
+      constraints: BoxConstraints(minWidth: 500, minHeight: 200),
       child: Builder(
         builder: (context) {
           if (isVideo) {

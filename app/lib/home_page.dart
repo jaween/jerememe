@@ -256,7 +256,7 @@ class _AboutButton extends StatelessWidget {
         Uri.parse('https://github.com/jaween/jerememe'),
         mode: LaunchMode.externalApplication,
       ),
-      child: Text('Source on GitHub', style: TextStyle(color: Colors.white12)),
+      child: Text('Source on GitHub', style: TextStyle(color: Colors.white24)),
     );
   }
 }
