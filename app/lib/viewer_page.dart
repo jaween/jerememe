@@ -64,7 +64,7 @@ class _ViewerPageState extends State<ViewerPage> {
                       return SizedBox.shrink();
                     }
                     return FilledButton.icon(
-                      onPressed: () {},
+                      onPressed: onShare,
                       label: Text('Share Meme'),
                       icon: Icon(Icons.ios_share),
                     );
