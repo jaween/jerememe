@@ -228,8 +228,8 @@ class _ShellState extends State<_Shell> {
 
   @override
   Widget build(BuildContext context) {
-    final hasSpace = MediaQuery.widthOf(context) >= 800 || !_canPop;
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
