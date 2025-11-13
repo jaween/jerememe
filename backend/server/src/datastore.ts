@@ -72,6 +72,8 @@ export class Datastore {
         for (const row of rows) {
           const r = row as any;
           const resolution = await this.resolutionOfMedia(r.media_id);
+          const downscaledResolution =
+            this.calculateDownscaledResolution(resolution);
           results.push({
             mediaId: r.media_id,
             startTime: r.start_time,
@@ -81,8 +83,8 @@ export class Datastore {
               url: this.storage.urlForKey(
                 this.storage.generateS3FrameKey(r.media_id, r.start_frame)
               ),
-              width: resolution.width,
-              height: resolution.height,
+              width: downscaledResolution.width,
+              height: downscaledResolution.height,
             },
           });
         }
@@ -111,6 +113,7 @@ export class Datastore {
     }
 
     const resolution = await this.resolutionOfMedia(mediaId);
+    const downscaledResolution = this.calculateDownscaledResolution(resolution);
 
     if (direction === "before") {
       start = Math.max(index - count, 0);
@@ -133,8 +136,8 @@ export class Datastore {
         subtitle: subtitle,
         thumbnail: {
           url: url,
-          width: resolution.width,
-          height: resolution.height,
+          width: downscaledResolution.width,
+          height: downscaledResolution.height,
         },
       });
     }
@@ -260,5 +263,15 @@ export class Datastore {
         resolve();
       });
     });
+  }
+
+  private calculateDownscaledResolution(resolution: {
+    width: number;
+    height: number;
+  }): { width: number; height: number } {
+    return {
+      width: (resolution.width / resolution.height) * 360,
+      height: 360,
+    };
   }
 }
