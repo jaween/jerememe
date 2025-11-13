@@ -231,8 +231,8 @@ const mediaMetadata = [
   MediaMetadata(
     id: 'movie',
     title: 'Teh Movie',
-    durationSeconds: 0,
-    durationFrames: 0,
-    resolution: Resolution(0, 0),
+    durationSeconds: 5496,
+    durationFrames: 131894,
+    resolution: Resolution(1920, 1080),
   ),
 ];
