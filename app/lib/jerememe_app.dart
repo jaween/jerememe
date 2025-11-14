@@ -154,9 +154,7 @@ class _RouterBuilderState extends State<_RouterBuilder> {
                     final frameString = state.pathParameters['frame'] as String;
                     final frame = int.tryParse(frameString) ?? 0;
                     return TopLevelTransitionPage(
-                      child: SelectionArea(
-                        child: CreatePage(mediaId: mediaId, frameIndex: frame),
-                      ),
+                      child: CreatePage(mediaId: mediaId, frameIndex: frame),
                     );
                   },
                 ),
