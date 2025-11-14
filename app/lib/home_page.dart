@@ -182,6 +182,9 @@ class SearchResultCard extends StatelessWidget {
               result.thumbnail.url,
               fit: BoxFit.cover,
               frameBuilder: (context, child, frame, wasLoadedSynchronously) {
+                if (wasLoadedSynchronously) {
+                  return child;
+                }
                 return AnimatedCrossFade(
                   duration: Duration(milliseconds: 250),
                   alignment: Alignment.center,

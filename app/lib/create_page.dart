@@ -518,6 +518,9 @@ class _FrameRangePickerState extends State<_FrameRangePicker> {
                                   frame,
                                   wasLoadedSynchronously,
                                 ) {
+                                  if (wasLoadedSynchronously) {
+                                    return child;
+                                  }
                                   return AnimatedCrossFade(
                                     duration: Duration(milliseconds: 250),
                                     alignment: Alignment.center,
