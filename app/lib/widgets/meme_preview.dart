@@ -11,12 +11,14 @@ import 'package:flutter_animate/flutter_animate.dart';
 class MemePreview extends StatefulWidget {
   final List<Frame> frames;
   final TextEditingController textController;
+  final ValueNotifier<double> fontSizeNotifier;
   final bool autofocus;
 
   const MemePreview({
     super.key,
     required this.frames,
     required this.textController,
+    required this.fontSizeNotifier,
     this.autofocus = true,
   });
 
@@ -79,11 +81,52 @@ class _MemePreviewState extends State<MemePreview> {
                         alignment: Alignment.bottomCenter,
                         child: ExcludeFocus(
                           child: IgnorePointer(
-                            child: ProportionalFontSizeBuilder(
-                              baseFontSize: 24,
+                            child: ValueListenableBuilder(
+                              valueListenable: widget.fontSizeNotifier,
+                              builder: (context, value, child) {
+                                return ProportionalFontSizeBuilder(
+                                  baseFontSize: value,
+                                  builder: (context, fontSize) {
+                                    return TextFormField(
+                                      controller: widget.textController,
+                                      scrollPhysics:
+                                          NeverScrollableScrollPhysics(),
+                                      decoration: InputDecoration(
+                                        border: InputBorder.none,
+                                      ),
+                                      maxLines: null,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontFamily: 'Lithos',
+                                        fontSize: fontSize,
+                                        foreground: Paint()
+                                          ..style = PaintingStyle.stroke
+                                          ..strokeWidth = 4
+                                          ..color = Colors.black,
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: ValueListenableBuilder(
+                          valueListenable: widget.fontSizeNotifier,
+                          builder: (context, value, child) {
+                            return ProportionalFontSizeBuilder(
+                              baseFontSize: value,
                               builder: (context, fontSize) {
                                 return TextFormField(
                                   controller: widget.textController,
+                                  focusNode: _textFieldFocusNode,
+                                  inputFormatters: [
+                                    CapitalizeTextInputFormatter(),
+                                  ],
+                                  textInputAction: TextInputAction.done,
                                   scrollPhysics: NeverScrollableScrollPhysics(),
                                   decoration: InputDecoration(
                                     border: InputBorder.none,
@@ -93,38 +136,10 @@ class _MemePreviewState extends State<MemePreview> {
                                   style: TextStyle(
                                     fontFamily: 'Lithos',
                                     fontSize: fontSize,
-                                    foreground: Paint()
-                                      ..style = PaintingStyle.stroke
-                                      ..strokeWidth = 4
-                                      ..color = Colors.black,
+                                    color: Colors.white,
                                   ),
                                 );
                               },
-                            ),
-                          ),
-                        ),
-                      ),
-                      Align(
-                        alignment: Alignment.bottomCenter,
-                        child: ProportionalFontSizeBuilder(
-                          baseFontSize: 24,
-                          builder: (context, fontSize) {
-                            return TextFormField(
-                              controller: widget.textController,
-                              focusNode: _textFieldFocusNode,
-                              inputFormatters: [CapitalizeTextInputFormatter()],
-                              textInputAction: TextInputAction.done,
-                              scrollPhysics: NeverScrollableScrollPhysics(),
-                              decoration: InputDecoration(
-                                border: InputBorder.none,
-                              ),
-                              maxLines: null,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontFamily: 'Lithos',
-                                fontSize: fontSize,
-                                color: Colors.white,
-                              ),
                             );
                           },
                         ),

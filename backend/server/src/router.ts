@@ -79,7 +79,12 @@ export function router(
     send({ type: "progress", progress: 0.4 });
     let encodingResult: EncodingResult;
     try {
-      encodingResult = await videoEncoder.encode(frames, 24, body.text);
+      encodingResult = await videoEncoder.encode(
+        frames,
+        24,
+        body.text,
+        body.fontSize
+      );
     } catch (e) {
       console.error(e);
       send({ type: "error", message: "Unable to make animation" });
@@ -129,6 +134,7 @@ const postMemeBodySchema = z.object({
   startFrame: z.coerce.number().int(),
   endFrame: z.coerce.number().int(),
   text: z.string(),
+  fontSize: z.number().default(24),
 });
 
 type PostMemeBody = z.infer<typeof postMemeBodySchema>;

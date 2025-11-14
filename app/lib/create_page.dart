@@ -31,6 +31,8 @@ class CreatePage extends ConsumerStatefulWidget {
 
 class _CreatePageState extends ConsumerState<CreatePage> {
   final _textController = TextEditingController();
+  final _fontSizeNotifier = ValueNotifier<double>(24);
+
   AsyncValue<Frames> _frames = AsyncLoading();
   AsyncValue<Frames> _reducedFrames = AsyncLoading();
   final _memePreviewColumnKey = GlobalKey();
@@ -79,6 +81,7 @@ class _CreatePageState extends ConsumerState<CreatePage> {
   @override
   void dispose() {
     _textController.dispose();
+    _fontSizeNotifier.dispose();
     super.dispose();
   }
 
@@ -100,6 +103,7 @@ class _CreatePageState extends ConsumerState<CreatePage> {
                     child: _MemeColumn(
                       key: _memePreviewColumnKey,
                       textController: _textController,
+                      fontSizeNotifier: _fontSizeNotifier,
                       mediaId: widget.mediaId,
                       frames: _frames,
                       range: _range,
@@ -176,11 +180,12 @@ class _CreatePageState extends ConsumerState<CreatePage> {
                                 _MemeColumn(
                                   key: _memePreviewColumnKey,
                                   textController: _textController,
+                                  fontSizeNotifier: _fontSizeNotifier,
                                   mediaId: widget.mediaId,
                                   frames: _frames,
                                   range: _range,
                                 ),
-                                SizedBox(height: 8),
+                                SizedBox(height: 32),
                                 FilledButton.icon(
                                   onPressed: !_frames.hasValue
                                       ? null
@@ -229,6 +234,7 @@ class _CreatePageState extends ConsumerState<CreatePage> {
           mediaId: widget.mediaId,
           range: _range,
           text: _textController.text,
+          fontSize: _fontSizeNotifier.value,
         );
       },
     );
@@ -243,6 +249,7 @@ class _CreatePageState extends ConsumerState<CreatePage> {
 
 class _MemeColumn extends ConsumerStatefulWidget {
   final TextEditingController textController;
+  final ValueNotifier<double> fontSizeNotifier;
   final String mediaId;
   final AsyncValue<Frames> frames;
   final _FrameRange range;
@@ -250,6 +257,7 @@ class _MemeColumn extends ConsumerStatefulWidget {
   const _MemeColumn({
     super.key,
     required this.textController,
+    required this.fontSizeNotifier,
     required this.mediaId,
     required this.frames,
     required this.range,
@@ -280,6 +288,7 @@ class _MemeColumnState extends ConsumerState<_MemeColumn> {
                 AsyncData(:final value) => MemePreview(
                   key: ValueKey(widget.range.hashCode),
                   textController: widget.textController,
+                  fontSizeNotifier: widget.fontSizeNotifier,
                   frames: value.selectedFrames(widget.range).toList(),
                 ),
               };
@@ -296,17 +305,45 @@ class _MemeColumnState extends ConsumerState<_MemeColumn> {
           ),
         ),
         SizedBox(height: 8),
-        Align(
-          alignment: Alignment.centerRight,
+        IconTheme(
+          data: IconThemeData(size: 18, color: ColorScheme.of(context).primary),
           child: ValueListenableBuilder(
-            valueListenable: widget.textController,
+            valueListenable: widget.fontSizeNotifier,
             builder: (context, value, child) {
-              return TextButton.icon(
-                onPressed: value.text.isEmpty
-                    ? null
-                    : widget.textController.clear,
-                label: Text('Remove text'),
-                icon: Icon(Icons.clear),
+              return Row(
+                children: [
+                  IconButton(
+                    onPressed: value <= 16
+                        ? null
+                        : () => widget.fontSizeNotifier.value -= 2,
+                    icon: Icon(Icons.remove),
+                  ),
+                  Text(
+                    'Font size',
+                    style: TextTheme.of(
+                      context,
+                    ).bodyMedium?.apply(color: ColorScheme.of(context).primary),
+                  ),
+                  IconButton(
+                    onPressed: value >= 30
+                        ? null
+                        : () => widget.fontSizeNotifier.value += 2,
+                    icon: Icon(Icons.add),
+                  ),
+                  Spacer(),
+                  ValueListenableBuilder(
+                    valueListenable: widget.textController,
+                    builder: (context, value, child) {
+                      return TextButton.icon(
+                        onPressed: value.text.isEmpty
+                            ? null
+                            : widget.textController.clear,
+                        label: Text('Remove text'),
+                        icon: Icon(Icons.clear),
+                      );
+                    },
+                  ),
+                ],
               );
             },
           ),
@@ -786,12 +823,14 @@ class _UploadDialog extends ConsumerStatefulWidget {
   final String mediaId;
   final _FrameRange range;
   final String text;
+  final double fontSize;
 
   const _UploadDialog({
     super.key,
     required this.mediaId,
     required this.range,
     required this.text,
+    required this.fontSize,
   });
 
   @override
@@ -814,6 +853,7 @@ class _UploadDialogState extends ConsumerState<_UploadDialog> {
       startFrame: widget.range.startFrame,
       endFrame: widget.range.endFrame,
       text: widget.text,
+      fontSize: widget.fontSize,
       onProgress: (progress) => _uploadProgressNotifier.value = progress,
     );
     if (!mounted) {

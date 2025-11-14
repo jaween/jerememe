@@ -78,6 +78,7 @@ class ApiService {
     required int startFrame,
     required int endFrame,
     required String text,
+    required double fontSize,
     required void Function(double progress) onProgress,
   }) async {
     final uri = Uri.parse('$_baseUrl/meme');
@@ -88,6 +89,7 @@ class ApiService {
         'startFrame': startFrame,
         'endFrame': endFrame,
         'text': text,
+        'fontSize': fontSize,
       });
 
     try {

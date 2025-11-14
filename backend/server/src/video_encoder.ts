@@ -10,7 +10,8 @@ export class VideoEncoder {
   public async encode(
     frames: Frame[],
     frameRate: number,
-    text: string
+    text: string,
+    fontSize: number
   ): Promise<EncodingResult> {
     if (frames.length === 0) {
       throw new Error("No frames provided.");
@@ -48,7 +49,7 @@ export class VideoEncoder {
       "-filter_complex",
       `concat=n=${inputFiles.length}:v=1:a=0[v]; \
       [v]settb=AVTB,setpts=N/${frameRate}/TB,fps=${frameRate}[v2]; \
-      [v2]subtitles=${subsPath}:fontsdir=/srv:force_style='FontName=Lithos,FontSize=24,MarginL=0,MarginR=0,Alignment=2,PrimaryColour=&HFFFFFF&,OutlineColour=&H000000&,BorderStyle=1,Outline=2'[out]`,
+      [v2]subtitles=${subsPath}:fontsdir=/srv:force_style='FontName=Lithos,FontSize=${fontSize},MarginL=0,MarginR=0,Alignment=2,PrimaryColour=&HFFFFFF&,OutlineColour=&H000000&,BorderStyle=1,Outline=2'[out]`,
       "-map",
       "[out]",
       "-c:v",
