@@ -68,18 +68,17 @@ Future<void> _extract({
   required File videoFile,
 }) async {
   print('Processing ${metadata.id}');
-  final resolution = await getVideoResolution(videoFile.path);
   final videoDuration = await getVideoDuration(videoFile.path);
   final roundedUpTotalMinutes = (videoDuration.inSeconds / 60).ceil();
 
-  print('  Extracting frames ($roundedUpTotalMinutes minute video)');
-  final frames = await extractFrames(
-    mediaId: metadata.id,
-    videoPath: videoFile.path,
-  );
+  // print('  Extracting frames ($roundedUpTotalMinutes minute video)');
+  // final frames = await extractFrames(
+  //   mediaId: metadata.id,
+  //   videoPath: videoFile.path,
+  // );
 
-  print('  Uploading frames');
-  await uploadFrames(s3: s3, frames: frames, mediaId: metadata.id);
+  // print('  Uploading frames');
+  // await uploadFrames(s3: s3, frames: frames, mediaId: metadata.id);
 
   final lines = await parseSrtFile(subtitlePath);
   if (lines == null) {
@@ -95,7 +94,7 @@ Future<void> _extract({
       metadata: metadata,
       duration: Duration(seconds: metadata.durationSeconds),
       durationFrames: metadata.durationFrames,
-      resolution: resolution,
+      resolution: metadata.resolution,
     ),
   );
 }
