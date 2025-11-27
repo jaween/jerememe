@@ -31,7 +31,7 @@ class CreatePage extends ConsumerStatefulWidget {
 
 class _CreatePageState extends ConsumerState<CreatePage> {
   final _textController = TextEditingController();
-  final _fontSizeNotifier = ValueNotifier<double>(24);
+  final _fontSizeNotifier = ValueNotifier<double>(20);
 
   AsyncValue<Frames> _frames = AsyncLoading();
   AsyncValue<Frames> _reducedFrames = AsyncLoading();
